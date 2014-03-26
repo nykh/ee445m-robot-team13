@@ -1,0 +1,10 @@
+#summary Logistics and Job Assignment
+#labels Phase-Requirements
+
+= Introduction =
+
+http://users.ece.utexas.edu/~valvano/EE345M/Lab06.pdf (Lab 6 Manual.pdf)
+
+= Logistics =
+
+= Job Assignment =

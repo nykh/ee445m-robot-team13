@@ -1,0 +1,158 @@
+// Backlight (pin 10) connected to +3.3 V
+// MISO (pin 9) unconnected
+// SCK (pin 8) connected to PA2 (SSI0Clk)
+// MOSI (pin 7) connected to PA5 (SSI0Tx)
+// TFT_CS (pin 6) connected to PA3 (SSI0Fss)
+// CARD_CS (pin 5) unconnected
+// Data/Command (pin 4) connected to PA6 (GPIO)
+// RESET (pin 3) connected to PA7 (GPIO)
+// VCC (pin 2) connected to +3.3 V
+// Gnd (pin 1) connected to ground
+
+int main(void){
+  
+  /*...*/
+  ST7735_InitR(INITR_REDTAB);
+  ST7735_FillScreen(0);                 // set screen to black
+
+  /* Test Color565() and DrawChar() */
+	/*
+  ST7735_DrawCharS(0, 0, 'c', ST7735_Color565(255, 0, 0), 0, 1);
+  ST7735_DrawCharS(6, 0, 'h', ST7735_Color565(255, 128, 0), 0, 1);
+  ST7735_DrawCharS(12, 0, 'a', ST7735_Color565(255, 255, 0), 0, 1);
+  ST7735_DrawCharS(18, 0, 'r', ST7735_Color565(128, 255, 0), 0, 1);
+  ST7735_DrawCharS(30, 0, 'T', ST7735_Color565(0, 255, 0), 0, 1);
+  ST7735_DrawCharS(36, 0, 'E', ST7735_Color565(0, 255, 255), 0, 1);
+  ST7735_DrawCharS(42, 0, 'S', ST7735_Color565(0, 0, 255), 0, 1);
+  ST7735_DrawCharS(48, 0, 'T', ST7735_Color565(128, 0, 255), 0, 1);
+
+  ST7735_DrawCharS(0, 8, 'c', ST7735_Color565(255, 0, 0), 0, 2);
+  ST7735_DrawCharS(12, 8, 'h', ST7735_Color565(255, 128, 0), 0, 2);
+  ST7735_DrawCharS(24, 8, 'a', ST7735_Color565(255, 255, 0), 0, 2);
+  ST7735_DrawCharS(36, 8, 'r', ST7735_Color565(128, 255, 0), 0, 2);
+  ST7735_DrawCharS(60, 8, 'T', ST7735_Color565(0, 255, 0), 0, 2);
+  ST7735_DrawCharS(72, 8, 'E', ST7735_Color565(0, 255, 255), 0, 2);
+  ST7735_DrawCharS(84, 8, 'S', ST7735_Color565(0, 0, 255), 0, 2);
+  ST7735_DrawCharS(96, 8, 'T', ST7735_Color565(128, 0, 255), 0, 2);
+
+  ST7735_DrawCharS(0, 24, 'c', ST7735_Color565(255, 0, 0), 0, 3);
+  ST7735_DrawCharS(18, 24, 'h', ST7735_Color565(255, 128, 0), 0, 3);
+  ST7735_DrawCharS(36, 24, 'a', ST7735_Color565(255, 255, 0), 0, 3);
+  ST7735_DrawCharS(54, 24, 'r', ST7735_Color565(128, 255, 0), 0, 3);
+  ST7735_DrawCharS(90, 24, 'T', ST7735_Color565(0, 255, 0), 0, 3);
+  ST7735_DrawCharS(108, 24, 'E', ST7735_Color565(0, 255, 255), 0, 3);
+  ST7735_DrawCharS(126, 24, 'S', ST7735_Color565(0, 0, 255), 0, 3); // off the screen
+  ST7735_DrawCharS(144, 24, 'T', ST7735_Color565(128, 0, 255), 0, 3); // totally off the screen
+
+  ST7735_DrawCharS(0, 48, 'c', ST7735_Color565(255, 0, 0), 0, 4);
+  ST7735_DrawCharS(24, 48, 'h', ST7735_Color565(255, 128, 0), 0, 4);
+  ST7735_DrawCharS(48, 48, 'a', ST7735_Color565(255, 255, 0), 0, 4);
+  ST7735_DrawCharS(72, 48, 'r', ST7735_Color565(128, 255, 0), 0, 4);
+  ST7735_DrawCharS(120, 48, 'T', ST7735_Color565(0, 255, 0), 0, 4); // off the screen
+  ST7735_DrawCharS(144, 48, 'E', ST7735_Color565(0, 255, 255), 0, 4); // totally off the screen
+  ST7735_DrawCharS(168, 48, 'S', ST7735_Color565(0, 0, 255), 0, 4); // totally off the screen
+  ST7735_DrawCharS(192, 48, 'T', ST7735_Color565(128, 0, 255), 0, 4); // totally off the screen
+
+  ST7735_DrawCharS(0, 80, 'c', ST7735_Color565(255, 0, 0), 0, 6);
+  ST7735_DrawCharS(36, 80, 'h', ST7735_Color565(255, 128, 0), 0, 6);
+  ST7735_DrawCharS(72, 80, 'a', ST7735_Color565(255, 255, 0), 0, 6);
+  ST7735_DrawCharS(108, 80, 'r', ST7735_Color565(128, 255, 0), 0, 6); // off the screen
+
+  ST7735_DrawChar(0, 135, 'A', ST7735_Color565(255, 128, 128), 0, 2);
+  ST7735_DrawChar(12, 135, 'd', ST7735_Color565(255, 0, 0), 0, 2);
+  ST7735_DrawChar(24, 135, 'v', ST7735_Color565(255, 128, 0), 0, 2);
+  ST7735_DrawChar(48, 135, 'c', ST7735_Color565(255, 255, 0), 0, 2);
+  ST7735_DrawChar(60, 135, 'h', ST7735_Color565(128, 255, 0), 0, 2);
+  ST7735_DrawChar(72, 135, 'a', ST7735_Color565(0, 255, 0), 0, 2);
+  ST7735_DrawChar(84, 135, 'r', ST7735_Color565(0, 255, 255), 0, 2);
+  ST7735_DrawChar(108, 135, 't', ST7735_Color565(0, 0, 255), 0, 2);
+  ST7735_DrawChar(120, 135, 'e', ST7735_Color565(128, 0, 255), 0, 2); // off the screen
+  ST7735_DrawChar(132, 135, 's', ST7735_Color565(255, 0, 255), 0, 2); // totally off the screen
+  ST7735_DrawChar(144, 135, 't', ST7735_Color565(255, 255, 255), 0, 2); // totally off the screen
+
+  ST7735_DrawChar(0, 151, 'A', ST7735_Color565(255, 128, 128), 0, 1);
+  ST7735_DrawChar(6, 151, 'd', ST7735_Color565(255, 0, 0), 0, 1);
+  ST7735_DrawChar(12, 151, 'v', ST7735_Color565(255, 128, 0), 0, 1);
+  ST7735_DrawChar(24, 151, 'c', ST7735_Color565(255, 255, 0), 0, 1);
+  ST7735_DrawChar(30, 151, 'h', ST7735_Color565(128, 255, 0), 0, 1);
+  ST7735_DrawChar(36, 151, 'a', ST7735_Color565(0, 255, 0), 0, 1);
+  ST7735_DrawChar(42, 151, 'r', ST7735_Color565(0, 255, 255), 0, 1);
+  ST7735_DrawChar(54, 151, 't', ST7735_Color565(0, 0, 255), 0, 1);
+  ST7735_DrawChar(60, 151, 'e', ST7735_Color565(128, 0, 255), 0, 1);
+  ST7735_DrawChar(66, 151, 's', ST7735_Color565(255, 0, 255), 0, 1);
+  ST7735_DrawChar(72, 151, 't', ST7735_Color565(255, 255, 255), 0, 1);*/
+
+  /* Test Message() */
+  ST7735_Message (0, 0, buff, 0);
+  ST7735_Message (0, 1, buff+5, 0);
+  ST7735_Message (0, 2, buff+10, 0);
+  ST7735_Message (0, 3, buff+15, 0);
+  ST7735_Message (1, 0, buff+20, 0);
+  ST7735_Message (1, 1, buff, 0);
+  ST7735_Message (1, 2, buff+5, 0);
+  ST7735_Message (1, 3, buff+35, 0);
+  ST7735_Message (1, 2, 0, 1534234323);
+  ST7735_Message (1, 3, 0, -453234323);
+	
+  ST7735_Message (0, 3, "s2", 0);
+	
+  SysTick_Wait1ms(10000);
+
+  // test DrawBitmap() including clipping test with images off the screen
+  ST7735_FillScreen(0xFFFF);            // set screen to white
+  ST7735_DrawBitmap(0, 5, Test2, 5, 6);   // top left corner of the screen
+  ST7735_DrawBitmap(59, 74, Test2, 5, 6); // center of the screen
+  ST7735_DrawBitmap(125, 74, Test2, 5, 6);// clip right
+  ST7735_DrawBitmap(59, 162, Test2, 5, 6);// clip bottom
+  ST7735_DrawBitmap(-2, 74, Test2, 5, 6); // clip left
+  ST7735_DrawBitmap(59, 2, Test2, 5, 6);  // clip top
+  SysTick_Wait1ms(10000);
+
+  ST7735_FillScreen(0xFFFF);            // set screen to white
+  x = 44;
+  y = 159;
+  dx = 1;
+  dy = 1;
+  while(1){
+    ST7735_DrawBitmap(x, y, Logo, 40, 160);
+    x = x + dx;
+    y = y + dy;
+    if((x >= (ST7735_TFTWIDTH - 40 + 15)) || (x <= -15)){
+      dx = -1*dx;
+    }
+    if((y >= (ST7735_TFTHEIGHT + 8)) || (y <= (ST7735_TFTHEIGHT - 8))){
+      dy = -1*dy;
+    }
+  }
+
+  // test display with a colorful demo
+  red = 255;
+  green = 0;
+  blue = 0;
+  while(1){
+    // transition from red to yellow by increasing green
+    for(green=0; green<255; green=green+1){
+      drawthecolors(red, green, blue);
+    }
+    // transition from yellow to green by decreasing red
+    for(red=255; red>0; red=red-1){
+      drawthecolors(red, green, blue);
+    }
+    // transition from green to light blue by increasing blue
+    for(blue=0; blue<255; blue=blue+1){
+      drawthecolors(red, green, blue);
+    }
+    // transition from light blue to true blue by decreasing green
+    for(green=255; green>0; green=green-1){
+      drawthecolors(red, green, blue);
+    }
+    // transition from true blue to pink by increasing red
+    for(red=0; red<255; red=red+1){
+      drawthecolors(red, green, blue);
+    }
+    // transition from pink to red by decreasing blue
+    for(blue=255; blue>0; blue=blue-1){
+      drawthecolors(red, green, blue);
+    }
+  }
+}

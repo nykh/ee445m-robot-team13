@@ -6,7 +6,7 @@
 #include "ST7735.h"
 #include "interpreter.h"
 
-#include "debug.h"
+#include "gpio_debug.h"
 
 #define SAMPLING_RATE 2000
 #define TIMESLICE 2*TIME_1MS  // thread switch time in system time units

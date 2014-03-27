@@ -1,11 +1,11 @@
 #summary Project Page for EE445M Team 13 Robot Project
 #labels Meta
 
-= Introduction =
-How to Set up
+= Schedule =
+''' 2014/3/27 ''' Lab 6 Prep.
+''' 2014/4/1 '''  Lab 6 Procedure.
 
-
-= Details =
+= How to Set-up =
 
 First, you have to be a member on the team, logged in using your designated Gmail account.
 
@@ -13,3 +13,7 @@ Go to Source Page, find the check-out address
 ** https://ee445m-robot-team13.googlecode.com/svn/trunk/ **
 
 Click on the link to Generate Google Code Password, remember this string. It is required to send files to the repository.
+
+= How to Commit =
+
+For this step, create a folder with your assignment and put the files in there.

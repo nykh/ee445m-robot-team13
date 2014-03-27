@@ -2,8 +2,8 @@
 #labels Meta
 
 = Schedule =
-''' 2014/3/27 ''' Lab 6 Prep.
-''' 2014/4/1 '''  Lab 6 Procedure.
+' 2014/3/27 ' Lab 6 Prep.
+' 2014/4/1 '  Lab 6 Procedure.
 
 = How to Set-up =
 

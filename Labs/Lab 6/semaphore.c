@@ -10,3 +10,5 @@ Sema4Type Sema4MailboxFull;
 Sema4Type Sema4FFTReady;
 Sema4Type	Sema4DataAvailable;
 
+Sema4Type Sema4CAN;
+

@@ -1,10 +1,6 @@
 #summary Project Page for EE445M Team 13 Robot Project
 #labels Meta
 
-= Schedule =
-' 2014/3/27 ' Lab 6 Prep.
-' 2014/4/1 '  Lab 6 Procedure.
-
 = How to Set-up =
 
 First, you have to be a member on the team, logged in using your designated Gmail account.

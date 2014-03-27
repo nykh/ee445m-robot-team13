@@ -6,8 +6,8 @@
 // October 27, 2012
 
 #define PB4 					((volatile unsigned long *)0x40005040
-#define PB3-0 					((volatile unsigned long *)0x4000503C
-
+#define PB3_0 					((volatile unsigned long *)0x4000503C
+#define Temperature				20 
 
 unsigned long Ping_Lasttime[4];
 unsigned long Ping_Distance[4];
@@ -50,7 +50,34 @@ unsigned char delay_count;
 	OS_kill();
 }
 
+//d=c* tIN/2
+//d = c * tIN * 12.5ns /2 * (um/us)
+//d = c * tIN * (1us/40) /(2*2) * (um/us)
+//d = c * tIN / (40*2*2) * um
+//compute and update distance array for four sensors
+//called when PORTB3-0 capture a value change
+//output resolution um
+unsigned long Distance(unsigned char SensorNum){
+unsigned long distance;
+unsigned long tin = OS_TimeDifference(OS_Time(),Ping_Lasttime[SensorNum]);
+//ignore underflow
+//+0.5: round
+unsigned long distance = ((tin/40)*(331+0.6*Temperature+0.5))/4;
+}
 
-//
+//put inside PORTB_handler
+//input system time, resolution: 12.5ns
+//no output
 void Ping_measure(void){
+unsigned char bits_I = 0;
+unsigned long Ping_status = PB3_0;
+//check rising edge and record time
+for (bits_I=0; bitsI<4;bits_I++)
+	{Ping_Lasttime[bits_I] = ((Ping_status&(1<<bits_I)) && ~(Ping_laststatus&(1<<bits_I)))? OS_Time():Ping_Lasttime[bits_I]; 
+	 GPIO_PORTB_ICR_R = 1<<bitsI;}
+//check falling edge and compute distance
+for (bits_I=0; bitsI<4;bits_I++)
+	{Ping_Distance[bits_I] = (~(Ping_status&(1<<bits_I)) && (Ping_laststatus&(1<<bits_I)))? Distance(bits_I):Ping_Distance[bits_I]; 
+	 GPIO_PORTB_ICR_R = 1<<bitsI;}
+Ping_laststatus = Ping_status;
 }

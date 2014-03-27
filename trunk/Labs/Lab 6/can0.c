@@ -42,6 +42,9 @@
 #include "debug.h"
 #include "interrupt.h"
 
+#include "os.h"
+#include "semaphore.h"
+
 #include "can0.h"
 #include "inc/tm4c123gh6pm.h"
 
@@ -75,6 +78,7 @@ void CAN0_Handler(void){ unsigned char data[4];
           RCVData[2] = data[2];
           RCVData[3] = data[3];
           MailFlag = true;   // new mail
+					OS_bSignal(&Sema4CAN);
         }
       }
     }
@@ -100,7 +104,8 @@ void static CAN0_Setup_Message_Object( unsigned long MessageID, \
 void CAN0_Open(void){unsigned long volatile delay; 
 
   MailFlag = false;
-
+	OS_InitSemaphore(&Sema4CAN, 1);
+	
   SYSCTL_RCGCCAN_R |= 0x00000001;  // CAN0 enable bit 0
   SYSCTL_RCGCGPIO_R |= 0x00000010;  // RCGC2 portE bit 4
   for(delay=0; delay<10; delay++){};
@@ -124,8 +129,10 @@ void CAN0_Open(void){unsigned long volatile delay;
 
 // send 4 bytes of data to other microcontroller 
 void CAN0_SendData(unsigned char data[4]){
+	 OS_bWait(&Sema4CAN);
 // in this case there is just one type, but you could accept multiple ID types
   CAN0_Setup_Message_Object(XMT_ID, NULL, 4, data, XMT_ID, MSG_OBJ_TYPE_TX);
+	 OS_bSignal(&Sema4CAN);
 }
 
 // Returns true if receive data is available
@@ -135,8 +142,9 @@ int CAN0_CheckMail(void){
 }
 // if receive data is ready, gets the data and returns true
 // if no receive data is ready, returns false
+/*****Not implemented
 int CAN0_GetMailNonBlock(unsigned char data[4]){
-  if(MailFlag){
+	if(MailFlag){
     data[0] = RCVData[0];
     data[1] = RCVData[1];
     data[2] = RCVData[2];
@@ -146,14 +154,17 @@ int CAN0_GetMailNonBlock(unsigned char data[4]){
   }
   return false;
 }
+*/
+
 // if receive data is ready, gets the data 
 // if no receive data is ready, it waits until it is ready
 void CAN0_GetMail(unsigned char data[4]){
-  while(MailFlag==false){};
+  OS_bWait(&Sema4CAN);
   data[0] = RCVData[0];
   data[1] = RCVData[1];
   data[2] = RCVData[2];
   data[3] = RCVData[3];
-  MailFlag = false;
+
+  OS_bSignal(&Sema4CAN);
 }
 

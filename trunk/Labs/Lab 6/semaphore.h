@@ -19,4 +19,6 @@ extern Sema4Type  Sema4MailboxFull;
 extern Sema4Type Sema4FFTReady;
 extern Sema4Type Sema4DataAvailable;
 
+extern Sema4Type Sema4CAN;
+
 #endif  //__SEMAPHORE_H

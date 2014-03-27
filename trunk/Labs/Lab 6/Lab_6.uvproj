@@ -472,11 +472,6 @@
               <FileType>1</FileType>
               <FilePath>.\gpio_debug.c</FilePath>
             </File>
-            <File>
-              <FileName>Ping.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Ping.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>

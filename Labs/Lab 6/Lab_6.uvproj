@@ -351,7 +351,7 @@
               <MiscControls></MiscControls>
               <Define>rvmdk PART_LM4F120H5QR</Define>
               <Undefine></Undefine>
-              <IncludePath>..;..\..\..</IncludePath>
+              <IncludePath>..;..\..\.. ; ..\inc\ ; ..\driverlib\</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -433,11 +433,6 @@
               <FilePath>.\OS.c</FilePath>
             </File>
             <File>
-              <FileName>debug.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\debug.c</FilePath>
-            </File>
-            <File>
               <FileName>osasm.s</FileName>
               <FileType>2</FileType>
               <FilePath>.\osasm.s</FilePath>
@@ -466,6 +461,21 @@
               <FileName>lab6_main.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\lab6_main.c</FilePath>
+            </File>
+            <File>
+              <FileName>can.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\can.c</FilePath>
+            </File>
+            <File>
+              <FileName>can0.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\can0.c</FilePath>
+            </File>
+            <File>
+              <FileName>gpio_debug.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\gpio_debug.c</FilePath>
             </File>
           </Files>
         </Group>

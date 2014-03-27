@@ -5,7 +5,7 @@
 // Jan 18, 2014
 
 #include "inc/tm4c123gh6pm.h"
-#include "debug.h"
+#include "gpio_debug.h"
 
 #define PF1       (*((volatile unsigned long *)0x40025008))
 #define PF2       (*((volatile unsigned long *)0x40025010))

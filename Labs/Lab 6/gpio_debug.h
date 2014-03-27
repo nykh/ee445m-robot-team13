@@ -5,8 +5,8 @@
 // Jan 18, 2014
 
 
-#ifndef __DEBUG_H__
-#define __DEBUG_H__
+#ifndef __GPIO_DEBUG_H__
+#define __GPIO_DEBUG_H__
 
 #define R         0x02
 #define B         0x04

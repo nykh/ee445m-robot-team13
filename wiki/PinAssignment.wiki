@@ -1,0 +1,11 @@
+#summary Pin Assignments
+#labels Phase-Design
+
+UART - PA0, 1
+LCD  - PA2-7
+
+Ping)))) - PB0-4
+DC Motors - PB6-7
+
+IR Sensor PE0-3
+CAN - PE4-5

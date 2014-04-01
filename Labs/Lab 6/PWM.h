@@ -32,5 +32,6 @@ void PWM0_Init(unsigned short period, unsigned short duty);
 // change duty cycle
 // duty is number of PWM clock cycles output is high  (2<=duty<=period-1)
 void PWM0_0_Duty(unsigned short duty);
+void PWM0_0_Direction(unsigned char direction);
 
-void PWM0_0_MotionUpdate(unsigned long duty, unsigned long direction);
+void PWM0_0_MotionUpdate(unsigned long duty, unsigned c direction);

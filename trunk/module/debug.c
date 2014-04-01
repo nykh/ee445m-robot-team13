@@ -12,7 +12,7 @@
 #define PF3       (*((volatile unsigned long *)0x40025020))
 #define LEDS      (*((volatile unsigned long *)0x40025038))
 
-void debug_LED_Init() { volatile unsigned long delay;
+void Debug_LED_Init() { volatile unsigned long delay;
   SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOF; // activate port F
   delay = SYSCTL_RCGC2_R;          // allow time to finish activating
   GPIO_PORTF_DIR_R |= 0x0E;        // make PF3-1 output (PF3-1 built-in LEDs)
@@ -24,10 +24,21 @@ void debug_LED_Init() { volatile unsigned long delay;
   LEDS = OFF;                        // turn all LEDs off
 }
 
-void debug_LED_heartbeat() {
+void Debug_PortE_Init(void){ unsigned long volatile delay;
+  SYSCTL_RCGC2_R |= 0x10;       // activate port E
+  delay = SYSCTL_RCGC2_R;        
+  delay = SYSCTL_RCGC2_R;         
+  GPIO_PORTE_DIR_R |= 0x3F;    // make PE3-0 output heartbeats
+  GPIO_PORTE_AFSEL_R &= ~0x3F;   // disable alt funct on PE3-0
+  GPIO_PORTE_DEN_R |= 0x3F;     // enable digital I/O on PE3-0
+  GPIO_PORTE_PCTL_R = ~0x00FFFFFF;
+  GPIO_PORTE_AMSEL_R &= ~0x3F;;      // disable analog functionality on PF
+}
+
+void Debug_LED_heartbeat() {
 	LEDS ^= RED;
 }
 
-void debug_LED(Colorwheel color) {
+void Debug_LED(Colorwheel color) {
 	LEDS = color;
 }

@@ -26,11 +26,12 @@ typedef enum Colorwheel_t {
 } Colorwheel;
 
 
+void Debug_PortE_Init(void);
 // ***************** debug_LED_Init ****************
 // Activate PF1-3 for LED
 // Inputs:  
 // Outputs: none
-void debug_LED_Init(void);
+void Debug_LED_Init(void);
 
 // ************** debug_LED_heartbeat **************
 // Activate Flashes red

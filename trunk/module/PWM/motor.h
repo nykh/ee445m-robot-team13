@@ -1,4 +1,4 @@
-// PWM.h
+// motor.h
 // Runs on TM4C123
 // Use PWM0/PB6 to generate pulse-width modulated outputs.
 // Daniel Valvano
@@ -27,11 +27,11 @@
 // PWM clock rate = processor clock rate/SYSCTL_RCC_PWMDIV
 //                = BusClock/2 
 //                = 50 MHz/2 = 25 MHz (in this example)
-void PWM0_Init(unsigned short period, unsigned short duty);
+void Motor_Init(unsigned short period, unsigned short duty);
 
 // change duty cycle
 // duty is number of PWM clock cycles output is high  (2<=duty<=period-1)
-void PWM0_0_Duty(unsigned short duty);
-void PWM0_0_Direction(unsigned char direction);
+void Motor_0_Duty(unsigned short duty);
+void Motor_0_Direction(unsigned char direction);
 
-void PWM0_0_MotionUpdate(unsigned long duty, unsigned c direction);
+void Motor_0_MotionUpdate(unsigned long duty, unsigned c direction);

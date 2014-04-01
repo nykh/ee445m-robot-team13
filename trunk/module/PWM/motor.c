@@ -1,4 +1,4 @@
-// PWM.c
+// motor.c
 // Runs on TM4C123
 // Use PWM0/PB6 to generate pulse-width modulated outputs.
 // Daniel Valvano
@@ -29,7 +29,7 @@
 // PWM clock rate = processor clock rate/SYSCTL_RCC_PWMDIV
 //                = BusClock/2 
 //                = 50 MHz/2 = 25 MHz (in this example)
-void PWM0_Init(unsigned short period){   volatile unsigned long delay;
+void Motor_Init(unsigned short period){   volatile unsigned long delay;
   SYSCTL_RCGC0_R |= SYSCTL_RCGC0_PWM0;  // 1) activate PWM0
   SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOB; // 2) activate port B
   delay = SYSCTL_RCGC2_R;               // allow time to finish activating
@@ -52,16 +52,16 @@ void PWM0_Init(unsigned short period){   volatile unsigned long delay;
 // change duty cycle
 // duty is number of PWM clock cycles output is high  (2<=duty<=period-1)
 
-void PWM0_0_MotionUpdate(unsigned long duty, unsigned char direction){
+void Motor_0_MotionUpdate(unsigned long duty, unsigned char direction){
 	PWM0_0_CMPA_R = duty - 1;           // 6) count value when output rises
 	PB4 = (direction != 0)<<4;          // PB4 controls the direction of one wheel
 }
 
-void PWM0_0_Duty(unsigned short duty){
+void Motor_0_Duty(unsigned short duty){
   PWM0_0_CMPA_R = duty - 1;             // 6) count value when output rises
 }
 
 //change direction
-void PWM0_0_Direction(unsigned char direction){
+void Motor_0_Direction(unsigned char direction){
 	PB4 = (direction != 0)<<4;          // PB4 controls the direction of one wheel
 }

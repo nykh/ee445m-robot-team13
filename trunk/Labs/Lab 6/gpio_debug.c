@@ -42,3 +42,18 @@ void Debug_LED_heartbeat() {
 void Debug_LED(Colorwheel color) {
 	LEDS = color;
 }
+
+void Debug_SetGreen(int color) {
+	if (color ) LEDS |= GREEN;
+	else 				LEDS &= ~GREEN;
+}
+
+void Debug_SetRed(int color) {
+	if (color ) LEDS |= RED;
+	else 				LEDS &= ~RED;
+}
+
+void Debug_SetBlue(int color) {
+	if (color ) LEDS |= BLUE;
+	else 				LEDS &= ~BLUE;
+}

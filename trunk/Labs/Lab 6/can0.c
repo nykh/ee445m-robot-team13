@@ -160,12 +160,12 @@ int CAN0_GetMailNonBlock(unsigned char data[4]){
 // if no receive data is ready, it waits until it is ready
 void CAN0_GetMail(unsigned char data[4]){
   OS_bWait(&Sema4CAN);
-	if (MailFlag ) {
-		data[0] = RCVData[0];
-		data[1] = RCVData[1];
-		data[2] = RCVData[2];
-		data[3] = RCVData[3];
-	}
+	while (!MailFlag){}
+	data[0] = RCVData[0];
+	data[1] = RCVData[1];
+	data[2] = RCVData[2];
+	data[3] = RCVData[3];
+	MailFlag = 0;
   OS_bSignal(&Sema4CAN);
 }
 

@@ -64,7 +64,7 @@ void UserTask(void){
 
 //debug code
 int main(void){ volatile unsigned long delay;
-//  PLL_Init();                      // bus clock at 80 MHz
+  PLL_Init();                      // bus clock at 80 MHz
   SYSCTL_RCGCGPIO_R |= 0x20;          // activate port F
   delay = SYSCTL_RCGCGPIO_R;          // allow time to finish activating
   GPIO_PORTF_LOCK_R = 0x4C4F434B;  // unlock GPIO Port F

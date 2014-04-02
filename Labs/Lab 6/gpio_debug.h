@@ -37,11 +37,17 @@ void Debug_LED_Init(void);
 // Activate Flashes red
 // Inputs:  none
 // Outputs: none
-void debug_LED_heartbeat(void);
+void Debug_LED_heartbeat(void);
 
 // ************** debug_LED_heartbeat **************
 // Activate Flashes the color
 // Inputs: color as defined above
 // Outputs: none
-void debug_LED(Colorwheel color);
+void Debug_LED(Colorwheel color);
+
+void Debug_SetGreen(int color);
+
+void Debug_SetRed(int color);
+
+void Debug_SetBlue(int color);
 #endif

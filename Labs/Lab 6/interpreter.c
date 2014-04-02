@@ -38,34 +38,29 @@ typedef struct {
 static void parseLCDCommand (void);
 static void helpList (void);
 /* System tasks */
-static void adjustFilterCommand(void);
-static void parseDisplayCommand(void);
-static void fftCommand(void);
+//static void adjustFilterCommand(void);
+
 /* Debugging functions */
 static void parseCriticalSectionCommand(void);
 static void parseProfilingCommand(void);
-static void captureCommand(void);
 
 //function protoypes for private functions
 static long stringToInteger (char *string);
 
 //Commands table, edit both the array and element numbers to update the table
-#define NUM_COMMANDS 8
+#define NUM_COMMANDS 4
 static const commandTable Table[NUM_COMMANDS]= {
 	{"lcd", &parseLCDCommand},
 	{"help", &helpList},
 
 	// DSP commands
-	{"fft", &fftCommand},
-	{"filter", &adjustFilterCommand},
+	//{"filter", &adjustFilterCommand},
 	
-	// Debugging commands
-	{"capture", &captureCommand},
+
 	// Critical Section Measurements
 	{"cs", &parseCriticalSectionCommand},
 	// Profiling measurement
 	{"pf", &parseProfilingCommand},
-	{"display", &parseDisplayCommand},
 
 };
 
@@ -77,11 +72,8 @@ static void helpList () {
 	"1- lcd: parameters= device, line, output string\r\n" \
 	"2- cs: parameters= duration of measurement\r\n" \
 	"3- pf: clear, start profiling and dump result\r\n" \
-	"4- fft: 'c' (continuous), 'b' (button), or 'o' (once)\r\n" \
-	"5- filter: turn FIR filter on/off. \r\n" \
-	"6- capture: prints 'voltage' or 'fft' output. \r\n" \
-	"7- display: change display mode: 'time' 'freq' 'run' 'stop'" \
 	);
+	//"5- filter: turn FIR filter on/off. \r\n" 
 }
 
 void Interpreter(void) {
@@ -210,7 +202,7 @@ static char *getline(char *str, unsigned short length) {
 /************************* DSP commands **********************/
 //Descriptiont: command for turning the filter on or off
 // Expects parameter "on" or "off" 
-#define NOW_USING   1
+/*#define NOW_USING   1
 #define STOP_USING  0
 #define NOT_USING  -1
 extern char Filter_Use;
@@ -235,35 +227,7 @@ static void adjustFilterCommand(void) {
 #undef NOW_USING
 #undef STOP_USING
 #undef NOT_USING
-
-#define NOW        0
-#define CONTINUOUS 1
-#define BUTTON     2
-extern char TriggerMode;
-extern short Capture;
-static void fftCommand(void) {
-	char *buffer;
-  
-  const char *msg = "Error: Enter 'c' (continuous), 'b' (button), or 'o' (once)\r";
-  
-  if (buffer = strtok(NULL, " ")) {
-		if(strcmp(buffer, "c") == 0) {
-			TriggerMode = CONTINUOUS;
-		} else if(strcmp(buffer, "b") == 0) {
-			TriggerMode = BUTTON;
-		} else if(strcmp(buffer, "o") == 0) {
-			TriggerMode = NOW;
-			Capture = 200;
-		} else {
-			puts(msg);
-		}
-  } else {
-    puts(msg);
-  }
-}
-#undef NOW 
-#undef CONTINUOUS
-#undef BUTTON
+*/
 
 //Description: command for parsing Critical Section measurement requests
 // Can invokde OS_Critical_Dump, OS_Critical_Start
@@ -294,82 +258,5 @@ static void parseCriticalSectionCommand(void) {
 static void parseProfilingCommand(void) {	
 	puts("Begin Profiling for 100 samples...\r\n");
 	OS_Profile_Start();
-}
-
-
-//Description: command for changing display mode
-//Will change the global variable displayMode
-//Input: None
-//Output: none
-
-
-extern unsigned char puti;
-extern unsigned char geti;
-
-#define TIME      1
-#define FREQUENCY 2
-extern char DisplayMode;
-#define ON 1
-#define OFF 0
-extern char DisplayIsOn;
-static void parseDisplayCommand(void) {
-  char *buffer;
-  
-  const char *msg = "Error: Enter 'time' or 'freq' or 'run' or 'stop'\r";
-  
-  if (buffer = strtok(NULL, " ")) {
-    if(strcmp(buffer, "time") == 0) {
-			if (DisplayMode == FREQUENCY){
-				long sr;
-				sr = StartCritical();
-				puti = geti = 0;
-				Sema4DataAvailable.Value = 0;			//Cannot call InitSemaphore because it unlinks every blocked thread
-				DisplayMode =  TIME; 
-				EndCritical(sr);
-			}
-		} else if(strcmp(buffer, "freq") == 0) {
-			DisplayMode = FREQUENCY;
-		} else if(strcmp(buffer, "run") == 0) {
-			DisplayIsOn = ON;
-		} else if(strcmp(buffer, "stop") == 0) {
-			DisplayIsOn = OFF;
-		} else {
-			puts(msg);
-		}
-  } else {
-    puts(msg);
-  }
-}
-#undef ON
-#undef OFF
-
-
-extern long recording[];
-extern long fft_output[];
-static void captureCommand(void){
-	char *buffer;
-  
-  const char *msg = "Error: Enter 'fft' or 'voltage' \r";
-	
-  
-  if (buffer = strtok(NULL, " ")) {
-    if(strcmp(buffer, "fft") == 0) {
-			int i;
-			for (i=0;i<64;i++){
-				printf("%ld\r\n", fft_output[i]);
-			}
-		} else if(strcmp(buffer, "voltage") == 0) {
-			char i, start;
-			i = start = puti;
-			do {
-				printf("%ld\r\n", recording[i]);
-				i = (i+1)%64;
-			} while (i != start);
-		} else {
-			puts(msg);
-		}
-  } else {
-    puts(msg);
-  }
 }
 

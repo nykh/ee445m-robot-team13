@@ -77,7 +77,7 @@ void Blink(void) {
 #define PF4                     (*((volatile unsigned long *)0x40025040)) // SW1
 #define PF0                     (*((volatile unsigned long *)0x40025004)) // SW2
 
-void SW1Push(void){
+void MessageSend(void){
 	unsigned char data[4];
 	data[0] = PF4;
 	data[1] = PF0;
@@ -104,7 +104,7 @@ int main(void) {
   NumCreated += OS_AddThread(&Consumer,128,2); 
 	
 	OS_AddPeriodicThread(&Blink, TIME_1MS*1000, 3);
-  OS_AddSW1Task(&SW1Push,2);
+  OS_AddPeriodicThread(&MessageSend, TIME_1MS*1000, 3);
   
   OS_Launch(TIMESLICE);
 }

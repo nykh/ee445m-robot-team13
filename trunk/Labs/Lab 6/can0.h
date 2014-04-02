@@ -33,6 +33,16 @@
 // reverse these IDs on the other microcontroller
 #define RCV_ID 4
 #define XMT_ID 2
+
+typedef enum PackageID_t {
+	IRSensor0 = 0,
+	IRSensor1 = 1,
+	IRSensor2 = 2,
+	IRSensor3 = 3,
+	UltraSonic = 4,
+	Motors = 5,
+} PackageID;
+
 // Returns true if receive data is available
 //         false if no receive data ready
 int CAN0_CheckMail(void);
@@ -43,7 +53,7 @@ int CAN0_GetMailNonBlock(unsigned char data[4]);
 
 // if receive data is ready, gets the data 
 // if no receive data is ready, it waits until it is ready
-void CAN0_GetMail(unsigned char data[4]);
+void CAN0_GetMail(PackageID *receiveID, unsigned char data[4]);
 
 // Initialize CAN port
 void CAN0_Open(void);

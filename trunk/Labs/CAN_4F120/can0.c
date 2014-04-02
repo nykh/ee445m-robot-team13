@@ -111,7 +111,7 @@ void CAN0_Open(void){unsigned long volatile delay;
   GPIO_PORTE_DIR_R |= 0x20;
       
   CANInit(CAN0_BASE);
-  CANBitRateSet(CAN0_BASE, 16000000, CAN_BITRATE);
+  CANBitRateSet(CAN0_BASE, 80000000, CAN_BITRATE);
   CANEnable(CAN0_BASE);
 // make sure to enable STATUS interrupts
   CANIntEnable(CAN0_BASE, CAN_INT_MASTER | CAN_INT_ERROR | CAN_INT_STATUS);

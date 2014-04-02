@@ -87,9 +87,9 @@ void SW1Push(void){
 int main(void) {
   PLL_Init();
   
-  ST7735_InitR(INITR_REDTAB);
-	ST7735_SetRotation(1);
-  ST7735_FillScreen(0); // set screen to black
+  //ST7735_InitR(INITR_REDTAB);
+	//ST7735_SetRotation(1);
+  //ST7735_FillScreen(0); // set screen to black
 
   OS_InitSemaphore(&Sema4UART, 1);
 	OS_InitSemaphore(&Sema4FFTReady, 0);

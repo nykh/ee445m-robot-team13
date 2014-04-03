@@ -12,7 +12,7 @@ void Ping_Init(void);
 
 //Send pulse to four Ping))) sensors
 //happens periodically by using timer
-//foreground thread 
+//added in interrupt handler as foreground thread 
 //Fs: about 10Hz
 //no input and no output
 void Ping_pulse(void);
@@ -21,3 +21,14 @@ void Ping_pulse(void);
 //input system time, resolution: 12.5ns
 //no output
 void Ping_measure(void);
+
+//compute and update distance array for four sensors
+//check the new data and update distance info
+//runs in foreground
+//output resolution um
+void Distance(void);
+
+//final distance data
+extern unsigned long Ping_Distance_Result[4];
+
+

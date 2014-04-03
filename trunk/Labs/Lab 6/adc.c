@@ -6,6 +6,11 @@
 // Daniel Valvano
 // October 25, 2012
 
+// April 2, 2014
+// Modified
+// ADC_Collect only calls the callback function for better flexibility and decoupling
+// Nick Huang
+
 /* This example accompanies the book
    "Embedded Systems: Real Time Interfacing to Arm Cortex M Microcontrollers",
    ISBN: 978-1463590154, Jonathan Valvano, copyright (c) 2012
@@ -319,7 +324,6 @@ unsigned char ADC_Status(void) {
 	return ADC_Collect_Flag;
 }
 
-int DataLost2 = 0;
 //------------ADC0Seq3_Handler------------
 // ADC interrupt handler for periodic sampling
 // It will put the new data is the data array
@@ -328,9 +332,6 @@ void ADC0Seq3_Handler(void){
   ADC0_ISC_R = ADC_ISC_IN3;                 // acknowledge ADC sequence 3 completion
   ADCvalue = ADC0_SSFIFO3_R&ADC_SSFIFO3_DATA_M;
 	ADCTask (ADCvalue);
-	if (!OS_Fifo_Put(ADCvalue)){
-		DataLost2 ++;
-	}
 	if (SamplesCollected++ >= CollectNumberOfSamples){
 		SamplesCollected = CollectNumberOfSamples;
 		ADC_Collect_Flag = ADC_DONE;

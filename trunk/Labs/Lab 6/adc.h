@@ -6,6 +6,11 @@
 // Daniel Valvano
 // October 25, 2012
 
+// April 2, 2014
+// Modified
+// ADC_Collect only calls the callback function for better flexibility and decoupling
+// Nick Huang
+
 /* This example accompanies the book
    "Embedded Systems: Real Time Interfacing to Arm Cortex M Microcontrollers",
    ISBN: 978-1463590154, Jonathan Valvano, copyright (c) 2012
@@ -43,5 +48,8 @@
 
 int ADC_Open(unsigned int channelNum);
 unsigned short ADC_In(void);
+
+// The "task" is now responsible for storing the data, the ADC_Collect function itself no long does this
 void ADC_Collect(unsigned int channelNum, unsigned int fs, void  (*task) (unsigned short), unsigned int numberOfSamples);
+
 unsigned char ADC_Status(void);

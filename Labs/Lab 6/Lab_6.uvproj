@@ -458,11 +458,6 @@
               <FilePath>.\cr4_fft_64_stm32.s</FilePath>
             </File>
             <File>
-              <FileName>lab6_main.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\lab6_main.c</FilePath>
-            </File>
-            <File>
               <FileName>can0.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\can0.c</FilePath>
@@ -476,6 +471,16 @@
               <FileName>motor.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\motor.c</FilePath>
+            </File>
+            <File>
+              <FileName>ir_sensor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ir_sensor.c</FilePath>
+            </File>
+            <File>
+              <FileName>lab6_main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lab6_main.c</FilePath>
             </File>
           </Files>
         </Group>

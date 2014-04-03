@@ -59,7 +59,7 @@ void CAN0_GetMail(PackageID *receiveID, unsigned char data[4]);
 void CAN0_Open(void);
 
 // send 4 bytes of data to other microcontroller 
-void CAN0_SendData(unsigned char data[4]);
+void CAN0_SendData(PackageID sendID, unsigned char data[4]);
 
 
 

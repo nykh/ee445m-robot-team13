@@ -237,7 +237,7 @@ void OS_Init(void) {  volatile unsigned long delay;
 	
 	Heap_Init();
 	
-  OS_AddThread(dummyThread,32,NUM_PRIORITY-1);
+  OS_AddThread(dummyThread,128,NUM_PRIORITY-1);
 }
 
 // ******** OS_InitSemaphore ************

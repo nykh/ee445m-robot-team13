@@ -35,12 +35,12 @@
 #define XMT_ID 2
 
 typedef enum PackageID_t {
-	IRSensor0 = 0,
-	IRSensor1 = 1,
-	IRSensor2 = 2,
-	IRSensor3 = 3,
-	UltraSonic = 4,
-	Motors = 5,
+	IRSensor0 = 1,
+	IRSensor1 = 2,
+	IRSensor2 = 3,
+	IRSensor3 = 4,
+	UltraSonic = 5,
+	Motors = 6,
 } PackageID;
 
 // Returns true if receive data is available

@@ -632,11 +632,12 @@ void static commandList(const unsigned char *addr) {
 void static commonInit(const unsigned char *cmdList) {
   volatile unsigned long delay;
   ColStart  = RowStart = 0; // May be overridden in init func
-
-  SYSCTL_RCGC1_R |= SYSCTL_RCGC1_SSI0;  // activate SSI0
-  SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOA; // activate port A
+	/******************** new style *********************/
+  SYSCTL_RCGCSSI_R |= SYSCTL_RCGCSSI_R0;  // activate SSI0
+  SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R0; // activate port A
   delay = SYSCTL_RCGC2_R;               // allow time to finish activating
-
+	/***************************************************/
+	
   // toggle RST low to reset; CS low so it'll listen to us
   // SSI0Fss is temporarily used as GPIO
   GPIO_PORTA_DIR_R |= 0xC8;             // make PA3,6,7 out

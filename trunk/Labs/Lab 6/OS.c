@@ -493,6 +493,10 @@ int OS_AddPeriodicThread(void(*task)(void), unsigned long period, unsigned long 
 			//SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R3;  // 0) activate timer3
 			delay = SYSCTL_RCGCTIMER_R;
 			delay = SYSCTL_RCGCTIMER_R;
+			delay = SYSCTL_RCGCTIMER_R;
+			delay = SYSCTL_RCGCTIMER_R;
+			delay = SYSCTL_RCGCTIMER_R;
+			delay = SYSCTL_RCGCTIMER_R;
 			PeriodicTask1 = task;             // user function (this line also allows time to finish activating)
 			TIMER3_CTL_R &= ~TIMER_CTL_TAEN;        // 1) disable timer2A during setup
 			TIMER3_CFG_R = TIMER_CFG_32_BIT_TIMER;  // 2) configure for 16-bit timer mode

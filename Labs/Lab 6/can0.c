@@ -130,9 +130,9 @@ void CAN0_Open(void){unsigned long volatile delay;
 }
 
 // send 4 bytes of data to other microcontroller 
-void CAN0_SendData(unsigned char data[4]){
+void CAN0_SendData(PackageID sendID, unsigned char data[4]){
 // in this case there is just one type, but you could accept multiple ID types
-  CAN0_Setup_Message_Object(XMT_ID, NULL, 4, data, XMT_ID, MSG_OBJ_TYPE_TX);
+  CAN0_Setup_Message_Object((unsigned long) sendID, NULL, 4, data, (unsigned long) sendID, MSG_OBJ_TYPE_TX);
 }
 
 // Returns true if receive data is available

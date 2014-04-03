@@ -12,7 +12,7 @@
 #define SAMPLING_RATE 2000
 #define TIMESLICE 2*TIME_1MS  // thread switch time in system time units
 
-#define MAIN 0		//1 = receiver, 0 = transmitter
+#define MAIN 1		//1 = receiver, 0 = transmitter
 /************************ Debug info ***********************/
 unsigned int NumCreated;
 

@@ -13,7 +13,7 @@
 #define LEDS      (*((volatile unsigned long *)0x40025038))
 
 void Debug_LED_Init() { volatile unsigned long delay;
-  SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOF; // activate port F
+  SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R5; // activate port F
   delay = SYSCTL_RCGC2_R;          // allow time to finish activating
   GPIO_PORTF_DIR_R |= 0x0E;        // make PF3-1 output (PF3-1 built-in LEDs)
   GPIO_PORTF_AFSEL_R &= ~0x0E;     // disable alt funct on PF3-1
@@ -25,7 +25,7 @@ void Debug_LED_Init() { volatile unsigned long delay;
 }
 
 void Debug_PortE_Init(void){ unsigned long volatile delay;
-  SYSCTL_RCGC2_R |= 0x10;       // activate port E
+  SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R4;  // activate port E
   delay = SYSCTL_RCGC2_R;        
   delay = SYSCTL_RCGC2_R;         
   GPIO_PORTE_DIR_R |= 0x3F;    // make PE3-0 output heartbeats

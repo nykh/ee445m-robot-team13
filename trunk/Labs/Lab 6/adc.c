@@ -238,9 +238,9 @@ static void ADCInit(unsigned char channelNum, unsigned char mode, unsigned char 
 
 
 	if(mode == ADC_SW_TRIGGER) {
-		SYSCTL_RCGC0_R |= 0x00020000;   // 7) activate ADC0 (legacy code)
-		delay = SYSCTL_RCGC0_R;         // 8) allow time for clock to stabilize
-		delay = SYSCTL_RCGC0_R;
+		SYSCTL_RCGCADC_R |= SYSCTL_RCGCADC_R1;   // 7) activate ADC1 (legacy code)
+		delay = SYSCTL_RCGCGPIO_R;      // 8) allow time for clock to stabilize
+		delay = SYSCTL_RCGCGPIO_R;
 		delay = SYSCTL_RCGCGPIO_R;      // 2) allow time for clock to stabilize
 		delay = SYSCTL_RCGCGPIO_R;
 		delay = SYSCTL_RCGCGPIO_R;      // 2) allow time for clock to stabilize
@@ -257,21 +257,31 @@ static void ADCInit(unsigned char channelNum, unsigned char mode, unsigned char 
 		ADC1_IM_R &= ~0x0008;           // 15) disable SS3 interrupts
 		ADC1_ACTSS_R |= 0x0008;         // 16) enable sample sequencer 3
 	} else if(mode == ADC_TIMER_TRIGGER) {
-		SYSCTL_RCGC0_R |= 0x00010000;   // 7) activate ADC0 (legacy code)
-		delay = SYSCTL_RCGC0_R;         // 8) allow time for clock to stabilize
-		delay = SYSCTL_RCGC0_R;
-		delay = SYSCTL_RCGCGPIO_R;      // 2) allow time for clock to stabilize
-		delay = SYSCTL_RCGCGPIO_R;
-		delay = SYSCTL_RCGCGPIO_R;      // 2) allow time for clock to stabilize
-		delay = SYSCTL_RCGCGPIO_R;
+		/********************** New style *******************************/ 		
+		SYSCTL_RCGCADC_R |= SYSCTL_RCGCADC_R0;   // 7) activate ADC0 (legacy code)
+		delay = SYSCTL_RCGCADC_R;         // 8) allow time for clock to stabilize
+		delay = SYSCTL_RCGCADC_R;
+		delay = SYSCTL_RCGCADC_R;      // 2) allow time for clock to stabilize
+		delay = SYSCTL_RCGCADC_R;
+		delay = SYSCTL_RCGCADC_R;      // 2) allow time for clock to stabilize
+		delay = SYSCTL_RCGCADC_R;
+		/****************************************************************/
+		
 		//SYSCTL_RCGC0_R &= ~0x00000300;  // 9) configure for 125K (legacy code)
 		ADC0_PC_R &= ~0xF;              // 9) clear max sample rate field
 		ADC0_PC_R |= 0x1;               //    configure for 125K samples/sec
 		ADC0_SSPRI_R = 0x3210;          // 10) Sequencer 3 is lowest priority
 		ADC0_ACTSS_R &= ~0x0008;        // 11) disable sample sequencer 3
 		// **** general initialization ****
-		SYSCTL_RCGC1_R |= SYSCTL_RCGC1_TIMER0;    // activate timer0 (legacy code)
-		delay = SYSCTL_RCGC1_R;                   // allow time to finish activating
+		
+		/********************** New style *******************************/ 
+		SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R0;    // activate timer0 (legacy code
+		delay = SYSCTL_RCGCTIMER_R;               // allow time to finish activating
+		delay = SYSCTL_RCGCTIMER_R;
+		delay = SYSCTL_RCGCTIMER_R;
+		delay = SYSCTL_RCGCTIMER_R;
+		/****************************************************************/
+		
 		TIMER0_CTL_R &= ~TIMER_CTL_TAEN;          // disable timer0A during setup
 		TIMER0_CTL_R |= TIMER_CTL_TAOTE;          // enable timer0A trigger to ADC
 		TIMER0_CFG_R = TIMER_CFG_16_BIT;          // configure for 16-bit timer mode

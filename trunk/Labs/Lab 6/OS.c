@@ -195,8 +195,8 @@ void OS_Init(void) {  volatile unsigned long delay;
   NVIC_SYS_PRI3_R =(NVIC_SYS_PRI3_R&0xFF00FFFF)|0x00E00000; // PendSV priority 7
 	
 	//Activate Timer1 for periodic interrupt for Waking up Threads
-  SYSCTL_RCGC1_R |= SYSCTL_RCGC1_TIMER1;  // 0) activate timer1
-	delay = SYSCTL_RCGC1_R;
+  SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R1;  // 0) activate timer1
+	delay = SYSCTL_RCGCTIMER_R;
   TIMER1_CTL_R &= ~TIMER_CTL_TAEN;        // 1) disable timer1A during setup
   TIMER1_CFG_R = TIMER_CFG_32_BIT_TIMER;  // 2) configure for 16-bit timer mode
   TIMER1_TAMR_R = TIMER_TAMR_TAMR_PERIOD;     // 3) configure for periodic mode, default down-count settings
@@ -208,8 +208,8 @@ void OS_Init(void) {  volatile unsigned long delay;
   TIMER1_CTL_R |= TIMER_CTL_TAEN;      // 10) enable 
 
 	//Activate Timer2 for system timer
-  SYSCTL_RCGC1_R |= SYSCTL_RCGC1_TIMER2;  // 0) activate timer2
-  delay = SYSCTL_RCGC1_R;             // user function (this line also allows time to finish activating)
+  SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R2;  // 0) activate timer2
+  delay = SYSCTL_RCGCTIMER_R;             // user function (this line also allows time to finish activating)
   TIMER2_CTL_R &= ~TIMER_CTL_TAEN;        // 1) disable timer2A during setup
   TIMER2_CFG_R = TIMER_CFG_32_BIT_TIMER;  // 2) configure for 16-bit timer mode
   TIMER2_TAMR_R = TIMER_TAMR_TAMR_PERIOD;     // 3) configure for periodic mode, default down-count settings
@@ -217,7 +217,7 @@ void OS_Init(void) {  volatile unsigned long delay;
 	TIMER2_CTL_R = TIMER_CTL_TAEN;
 
 	//Activate PF0 Edge Triggered Interrupt
-	SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOF;
+	SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R5;
 	
 	GPIO_PORTF_LOCK_R = GPIO_LOCK_KEY; // Unlock to access CR
 	GPIO_PORTF_CR_R |= (SW1|SW2);      // enable commit for PF4 and PF0
@@ -489,10 +489,10 @@ int OS_AddPeriodicThread(void(*task)(void), unsigned long period, unsigned long 
 	
 	switch(currentTimer) {
 		case IDLE:	
-			SYSCTL_RCGC1_R |= SYSCTL_RCGC1_TIMER3;
+			SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R3;
 			//SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R3;  // 0) activate timer3
-			delay = SYSCTL_RCGC1_R;
-			delay = SYSCTL_RCGC1_R;
+			delay = SYSCTL_RCGCTIMER_R;
+			delay = SYSCTL_RCGCTIMER_R;
 			PeriodicTask1 = task;             // user function (this line also allows time to finish activating)
 			TIMER3_CTL_R &= ~TIMER_CTL_TAEN;        // 1) disable timer2A during setup
 			TIMER3_CFG_R = TIMER_CFG_32_BIT_TIMER;  // 2) configure for 16-bit timer mode
@@ -513,8 +513,8 @@ int OS_AddPeriodicThread(void(*task)(void), unsigned long period, unsigned long 
 			break;
 		case ONE_IN_USE:
 			SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R4;	// 0) activate timer4
-			delay = SYSCTL_RCGC1_R;
-			delay = SYSCTL_RCGC1_R;
+			delay = SYSCTL_RCGCTIMER_R;
+			delay = SYSCTL_RCGCTIMER_R;
 			PeriodicTask2 = task;             // user function (this line also allows time to finish activating)
 			TIMER4_CTL_R &= ~TIMER_CTL_TAEN;        // 1) disable timer2A during setup
 			TIMER4_CFG_R = TIMER_CFG_32_BIT_TIMER;  // 2) configure for 16-bit timer mode

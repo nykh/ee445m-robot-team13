@@ -75,7 +75,7 @@ int main(void) {
 	
   NumCreated = 0;
   //NumCreated += OS_AddThread(&Interpreter,128,1); 
-  NumCreated += OS_AddPeriodicThread(&IRSensorSend, 10*TIME_1MS, 2); 
+  NumCreated += OS_AddPeriodicThread(&IRSensorSend, 100*TIME_1MS, 2); 
   CAN0_Open();
   OS_Launch(TIMESLICE);
 }

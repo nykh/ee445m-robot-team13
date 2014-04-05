@@ -8,11 +8,12 @@
 #include "can0.h"
 #include "gpio_debug.h"
 #include "ir_sensor.h"
+#include "ping.h"
 
 #define SAMPLING_RATE 2000
 #define TIMESLICE 2*TIME_1MS  // thread switch time in system time units
 
-#define MAIN 1		//1 = receiver, 0 = transmitter
+#define MAIN 0		//1 = receiver, 0 = transmitter
 /************************ Debug info ***********************/
 unsigned int NumCreated;
 
@@ -32,7 +33,7 @@ void NetworkReceive(void) {
 				ST7735_Message(0,0,"IR0: ", ((unsigned short *)canData)[0]);
 			break;
 			case UltraSonic:
-				ST7735_Message(0,1,"ULS0: ", ((unsigned short *)canData)[0]);
+				ST7735_Message(0,1,"ULS0: ", ((unsigned long *)canData)[0]);
 			break;
 			default:
 			break;
@@ -61,10 +62,14 @@ int main(void) {
 
 void IRSensorSend(void) {
 	unsigned short IRvalues[4];
+	unsigned long sonarValues[4];
 	unsigned char CanData[4];
 	IR_getValues(IRvalues);
 	((unsigned short*)CanData)[0] = IRvalues[0];
 	CAN0_SendData(IRSensor0, CanData);
+	Ping_getData (sonarValues);
+	((unsigned long*)CanData)[0] = sonarValues[0];
+	CAN0_SendData(UltraSonic, CanData);
 }
 
 int main(void) {
@@ -75,8 +80,9 @@ int main(void) {
 	
   NumCreated = 0;
   //NumCreated += OS_AddThread(&Interpreter,128,1); 
-  NumCreated += OS_AddPeriodicThread(&IRSensorSend, 100*TIME_1MS, 2); 
+  NumCreated += OS_AddPeriodicThread(&IRSensorSend, 100*TIME_1MS, 3); 
   CAN0_Open();
+	Ping_Init();
   OS_Launch(TIMESLICE);
 }
 

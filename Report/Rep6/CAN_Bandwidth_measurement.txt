@@ -1,0 +1,7 @@
+100ms  O
+10ms   O
+5ms    O
+4ms    X
+3ms    X
+2ms    X
+1ms    X

@@ -21,6 +21,8 @@ unsigned int NumCreated;
 
 #if MAIN
 
+long dataReceived;
+
 void NetworkReceive(void) {
 	PackageID receiveID;
 	unsigned char canData[4];
@@ -31,6 +33,7 @@ void NetworkReceive(void) {
 		switch(receiveID) {
 			case IRSensor0:
 				ST7735_Message(0,0,"IR0: ", ((unsigned short *)canData)[0]);
+				dataReceived++;
 			break;
 			case UltraSonic:
 				ST7735_Message(0,1,"ULS0: ", ((unsigned long *)canData)[0]);
@@ -60,16 +63,21 @@ int main(void) {
 
 #else 
 
-void IRSensorSend(void) {
+long dataSend = 0;
+
+void IRSensorSend(void) {	
 	unsigned short IRvalues[4];
 	unsigned long sonarValues[4];
 	unsigned char CanData[4];
 	IR_getValues(IRvalues);
 	((unsigned short*)CanData)[0] = IRvalues[0];
 	CAN0_SendData(IRSensor0, CanData);
-	Ping_getData (sonarValues);
-	((unsigned long*)CanData)[0] = sonarValues[0];
-	CAN0_SendData(UltraSonic, CanData);
+	
+	dataSend++;
+	
+//	Ping_getData (sonarValues);
+//	((unsigned long*)CanData)[0] = sonarValues[0];
+//	CAN0_SendData(UltraSonic, CanData);
 }
 
 int main(void) {

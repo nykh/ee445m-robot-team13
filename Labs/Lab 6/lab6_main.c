@@ -21,8 +21,6 @@ unsigned int NumCreated;
 
 #if MAIN
 
-long dataReceived;
-
 void NetworkReceive(void) {
 	PackageID receiveID;
 	unsigned char canData[4];
@@ -63,8 +61,6 @@ int main(void) {
 
 #else 
 
-long dataSend = 0;
-
 void IRSensorSend(void) {	
 	unsigned short IRvalues[4];
 	unsigned long sonarValues[4];
@@ -73,11 +69,9 @@ void IRSensorSend(void) {
 	((unsigned short*)CanData)[0] = IRvalues[0];
 	CAN0_SendData(IRSensor0, CanData);
 	
-	dataSend++;
-	
-//	Ping_getData (sonarValues);
-//	((unsigned long*)CanData)[0] = sonarValues[0];
-//	CAN0_SendData(UltraSonic, CanData);
+	Ping_getData (sonarValues);
+	((unsigned long*)CanData)[0] = sonarValues[0];
+	CAN0_SendData(UltraSonic, CanData);
 }
 
 int main(void) {

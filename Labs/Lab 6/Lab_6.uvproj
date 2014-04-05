@@ -482,6 +482,11 @@
               <FileType>1</FileType>
               <FilePath>.\lab6_main.c</FilePath>
             </File>
+            <File>
+              <FileName>Ping.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Ping.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

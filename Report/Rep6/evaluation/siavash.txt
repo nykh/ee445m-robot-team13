@@ -1,0 +1,21 @@
+Siavash's post-mortem
+
+Chen:
+W: Not clear and concise in coding style
+S: Hardware interface, embedded systems
+
+Yan:
+W: Not clear and concise in coding style
+S: Mechanical engineering stuff, hard working
+
+Nick:
+W: Too much perfectionist
+S: Precise and clear coding style, good at programming, experienced in embedded systems 
+
+Miao: 
+W: Not clear and concise in coding style
+S: on-time, hard working
+
+Siavash:
+W: Doesn't do things until the deadline is written
+S: good at programming, experienced in embedded systems 

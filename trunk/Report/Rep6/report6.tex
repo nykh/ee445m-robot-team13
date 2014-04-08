@@ -3,7 +3,6 @@
 \usepackage{fullpage}
 
 \usepackage{graphicx}
-\usepackage{caption}
 \usepackage{subcaption}
 
 \usepackage{amsmath}
@@ -65,7 +64,103 @@ In this lab we will also form a team of 4 or 5, which requires us also to apply 
 
 \section{Software Design} 
 
+\paragraph{(a)} We made small changes to \texttt{CAN0.c}, replacing the spinlock  mechanism with actual semaphore.
+
+\lstset{language=C, style=MyCStyle}
+\lstinputlisting{code/can0.c}
+
+We also modified the FIFO macro to internally include semaphores.
+
+\lstinputlisting{code/FIFO_sema4.h}
+
+\paragraph{(b)} IR sensor code is basically the same as Lab.\ 4, except that I decoupled the \texttt{Filter()} functions
+from the filter buffer. The call-back functions in ADC routine is now responsible for acquiring and storing the data.
+
+\lstinputlisting{code/ir_sensor.h}
+\lstinputlisting{code/ir_sensor.c}
+
+For the Ping))) interfacing, we used one pin to output the $ 5 \, \mu s$ pulse, and one pin for each sensor set to
+trigger an interrupt at both edges. The handler will calculate the difference of time between the two edges and thus
+determine the distance measurement.
+
+\lstinputlisting{code/ping.h}
+\lstinputlisting{code/ping.c}
+
+\paragraph{(c)} The code that sets up the distributed data acquisition system comes in two sides. On the transmitter side,
+the \texttt{main} initializes the sensors and network, and sends data periodically at about $ 10 \, Hz $.
+
+\lstinputlisting{code/main_TX.c}
+
+On the receiver side, the \texttt{main} initializes the display and network, then add a thread that waits for the packet
+from the network. Once it receives a packet, it checks the packet ID to determine the type of data and then publish it
+to the display.
+
+\lstinputlisting{code/main_RX.c}
+
+This is a very simplistic example, however, it contains the full range of function for a distributed Data Acquisition System.
+
 \section{Measurement}
+
+\paragraph{(a) Ping))) Calibration}
+\paragraph{(b) IR sensor Calibration}
+
+\paragraph{(c) IR sensor noise spectrum} We held a piece of paper constant from the IR sensor and recorded this noise
+spectrum. Because the measured object is nearly static, everything except the DC component should be considered noise.
+The noise therefore includes a noise floor that spans all frequencies. The major source of the noise is the thermal noise
+that includes all frequency and with amplitude of $ \frac{1}{f} $. The other source of noise is electrostatics property
+of the sensor itself, which shows a visible small squarewave in the time domain. This squarewave translates to a noise
+of all frequency in the frequency domain.
+
+\setlength{\pic}{0.8\textwidth}
+\begin{figure}[htp]
+\center
+\includegraphics[width=\pic]{scope/ir_fft}
+\caption{Frequency spectrum of noise}
+\label{noise}
+\end{figure}
+
+
+\paragraph{(d) Motor}
+\paragraph{(e) CAN scope picture} Below is a CAN packet measured at the CANH bus (blue) and the microcontroller output (yellow). It can be observed that the CANH signal is a inverted version of the microcontroller output. Also, the length of
+a typical packet is $ 161.7 \, \mu s $
+
+\setlength{\pic}{0.8\textwidth}
+\begin{figure}[htp]
+\center
+\includegraphics[width=\pic]{scope/CAN_packet}
+\caption{Scope trace of a typical CAN packet}
+\label{trace}
+\end{figure}
+
+
+\paragraph{(f) CAN Network bandwidth} We set the CAN network bit rate at $ 1 Mbit $ and decrease the sampling period of
+IR sensor. The result is shown in Table-\ref{tab1}.
+
+\begin{table}
+\center
+  \begin{tabular}{|c|c|}
+    \hline
+    \multicolumn{2}{|c|}{CAN Bandwidth} \\
+    \hline
+    Sampling Rate  & Data Lost \\
+    \hline
+	100 ms &   No \\
+	10 ms  &   No \\
+	5 ms   &   No \\
+	4 ms   &   Yes \\
+	3 ms   &   Yes \\
+	2 ms   &   Yes \\
+	1 ms   &   Yes \\
+    \hline
+  \end{tabular}
+  \caption{Bandwith measurement}
+  \label{tab1}
+\end{table}
+
+Therefore we deduct the maximum sampling rate the system can handle is $\frac{1}{5 \, ms} = 200 \, \text{Hz}$.
+Considering the packet length measured in Figure-\ref{trace}, CAN network itself should not be the limiting factor.
+The limiting factor is probably the execution speed of the data acquisition thread on the receiver side, which
+needs to run a 51-point filter code for each IR sensor data.
 
 \section{Analysis}
 
@@ -73,11 +168,11 @@ In this lab we will also form a team of 4 or 5, which requires us also to apply 
 
 Ping))) outputs a PWM signal which duty cycles changes linearly with respect to the distance, so it's easier to convert the raw data to distance.
 
-\paragraph{(2) What is one advantage of the \emph{2Y0A21YK} sensor over the Ping))) sensor \\ }
+\paragraph{(2) What is one advantage of the \textbf{GP2Y0A21YK} sensor over the Ping))) sensor \\ }
 
 \emph{GP2Y0A21YK} measures the distance by an analog voltage. It is easier to convert voltage to digital data using ADC compared to measure time in Ping.
 
-\paragraph{(3) Describe the noise of the \emph{GP2Y0A21YK} when measured with a spectrum analyzer. \\ }
+\paragraph{(3) Describe the noise of the \textbf{GP2Y0A21YK} when measured with a spectrum analyzer. \\ }
 
 The noise of the sensor is periodic square waves. An square wave contains all different frequencies, with Maximum amplitude at the frequency of the square wave.
 You can see that the spectrum detects many different frequencies.

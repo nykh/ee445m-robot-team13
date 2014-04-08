@@ -6,6 +6,7 @@
 \usepackage{subcaption}
 
 \usepackage{amsmath}
+\usepackage{tabularx}
 
 % Code for typesttting C code
 \usepackage{listings}
@@ -61,6 +62,35 @@ communication protocol to transmit the sensor data and other things.
 In this lab we will also form a team of 4 or 5, which requires us also to apply communication skills to function as a team.
 
 \section{Hardware Design}
+%\noindent Ping ultrasonic sensor is shown at Figure-\ref{ping}
+\setlength{\pic}{0.8\textwidth}
+\begin{figure}[htp]
+\noindent Ping sensor is shown at Figure-\ref{ping}
+\center
+\includegraphics[width=\pic]{Ping_Circuit}
+\caption{ }
+\label{ping}
+\end{figure}
+
+\setlength{\pic}{0.8\textwidth}
+\begin{figure}[htp]
+\noindent IR sensor is shown at Figure-\ref{ir}
+\center
+\includegraphics[width=\pic]{IR_Circuit}
+\caption{ }
+\label{ir}
+\end{figure}
+
+
+
+\setlength{\pic}{0.8\textwidth}
+\begin{figure}[htp]
+\noindent The DC motor circuit is shown at Figure-\ref{motor}
+\center
+\includegraphics[width=\pic]{PWM_Circuit}
+\caption{ }
+\label{motor}
+\end{figure}
 
 \section{Software Design} 
 
@@ -101,8 +131,72 @@ This is a very simplistic example, however, it contains the full range of functi
 
 \section{Measurement}
 
-\paragraph{(a) Ping))) Calibration}
-\paragraph{(b) IR sensor Calibration}
+\paragraph{(a) Ping))) Calibration}	Ping measurements in Table-\ref{tab1}
+\begin{table}
+\tiny
+\center
+  \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
+    \hline
+    \multicolumn{11}{|c|}{Ping measurements} \\
+    \hline
+   Truth dT(cm) & \multicolumn{8}{|c|}{measured dM(cm)} & standard deviation & span \\
+    \hline
+    10 & 10.1538 & 10.2742 & 10.129 & 10.2398 & 9.9102 & 10.1231 & 10.2314 & 9.9324 & 0.136715993 & 0.364\\
+	20 & 20.7653 & 20.9498 & 20.4286 & 20.5348 & 20.8695 & 21.0135 & 20.8493 & 20.9756 & 0.212323325 & 0.5849\\
+	30 & 31.4354 & 31.2317 & 31.2342 & 31.5463 & 31.8467 & 31.6756 & 31.3765 & 31.0475 & 0.260240679 & 0.7992\\
+	50 & 52.7532 & 52.8654 & 52.2543 & 52.7397 & 52.9485 & 53.0123 & 52.9475 & 53.2397 & 0.286319955 & 0.9854\\
+	80 & 83.1323 & 82.1398 & 83.2538 & 84.0132 & 83.8764 & 83.1233 & 82.4956 & 83.2835 & 0.626714781 & 1.8734\\
+    \hline
+  \end{tabular}
+  \caption{Ping measurements}
+  \label{tab1}
+\end{table}
+
+%\begin{table}[htbp]
+%  \tiny
+%  \centering
+%  \caption{Ping measurements \textbf{cm}}
+%  \begin{tabularx}{\textwidth}{|X|X|X|X|X|X|X|X|X|X|X|}
+%  \hline
+%  \multicolumn{11}{|c|}{Ping measurements} \\
+%  Truth dT(cm0) & \multicolumn{8}{|c|}{measured dM(cm)} & standard deviation & span \\
+%  \hline
+%    10 & 10.1538 & 10.2742 & 10.129 & 10.2398 & 9.9102 & 10.1231 & 10.2314 & 9.9324 & 0.136715993 & 0.364\\
+%	20 & 20.7653 & 20.9498 & 20.4286 & 20.5348 & 20.8695 & 21.0135 & 20.8493 & 20.9756 & 0.212323325 & 0.5849\\
+%	30 & 31.4354 & 31.2317 & 31.2342 & 31.5463 & 31.8467 & 31.6756 & 31.3765 & 31.0475 & 0.260240679 & 0.7992\\
+%	50 & 52.7532 & 52.8654 & 52.2543 & 52.7397 & 52.9485 & 53.0123 & 52.9475 & 53.2397 & 0.286319955 & 0.9854\\
+%	80 & 83.1323 & 82.1398 & 83.2538 & 84.0132 & 83.8764 & 83.1233 & 82.4956 & 83.2835 & 0.626714781 & 1.8734\\
+%    \hline
+%    \end{tabularx}%
+%  \label{tab:addlabel}%
+%\end{table}%
+
+
+\paragraph{(b) IR sensor Calibration}	IR sensor measurements in Table-\ref{tab2}
+
+\begin{table}
+\tiny
+\center
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+    \hline
+    \multicolumn{7}{|c|}{IR sensor measurements} \\
+    \hline
+    Truth dT(c0) & ADC average & ADC Std. Dev. & ADC span & Voltage average(V) & Voltage Std. Dev.(V) & Voltage span (V)\\
+    \hline
+	10 & 2822 & 5 & 19 & 2.067 & 0.004 & 0.014\\
+	15 & 1979 & 4 & 15 & 1.450 & 0.003 & 0.011\\
+	20 & 1570 & 5 & 19 & 1.150 & 0.003 & 0.014\\
+	25 & 1282 & 6 & 25 & 0.939 & 0.005 & 0.018\\
+	30 & 1114 & 5 & 27 & 0.816 & 0.004 & 0.020\\
+	35 & 941 & 2 & 8 & 0.689 & 0.001 & 0.006\\
+	40 & 848 & 7 & 23 & 0.621 & 0.005 & 0.017\\
+	45 & 748 & 6 & 24 & 0.548 & 0.004 & 0.018\\
+	50 & 675 & 5 & 18 & 0.494 & 0.003 & 0.013\\
+    \hline
+  \end{tabular}
+  \caption{IR measurements}
+  \label{tab2}
+\end{table}
 
 \paragraph{(c) IR sensor noise spectrum} We held a piece of paper constant from the IR sensor and recorded this noise
 spectrum. Because the measured object is nearly static, everything except the DC component should be considered noise.
@@ -120,7 +214,25 @@ of all frequency in the frequency domain.
 \end{figure}
 
 
-\paragraph{(d) Motor}
+\paragraph{(d) Motor} DC Motor measurements in Table-\ref{tab3}
+\begin{table}
+\center
+  \begin{tabular}{|c|c|c|}
+    \hline
+    \multicolumn{3}{|c|}{DC Motor measurements} \\
+    \hline
+    Condition & Voltage across motor & Current \\
+    \hline
+	no-load				&	4.41v &	32mA \\
+	with rubber wheel	&	4.42v &	34mA \\
+	wheel \& on carpet	&   4.42v & 100mA \\
+    \hline
+  \end{tabular}
+  \caption{DC motor measurements}
+  \label{tab3}
+\end{table}
+
+
 \paragraph{(e) CAN scope picture} Below is a CAN packet measured at the CANH bus (blue) and the microcontroller output (yellow). It can be observed that the CANH signal is a inverted version of the microcontroller output. Also, the length of
 a typical packet is $ 161.7 \, \mu s $
 
@@ -134,7 +246,7 @@ a typical packet is $ 161.7 \, \mu s $
 
 
 \paragraph{(f) CAN Network bandwidth} We set the CAN network bit rate at $ 1 Mbit $ and decrease the sampling period of
-IR sensor. The result is shown in Table-\ref{tab1}.
+IR sensor. The result is shown in Table-\ref{tab4}.
 
 \begin{table}
 \center
@@ -154,7 +266,7 @@ IR sensor. The result is shown in Table-\ref{tab1}.
     \hline
   \end{tabular}
   \caption{Bandwith measurement}
-  \label{tab1}
+  \label{tab4}
 \end{table}
 
 Therefore we deduct the maximum sampling rate the system can handle is $\frac{1}{5 \, ms} = 200 \, \text{Hz}$.
@@ -192,6 +304,17 @@ Therefore, $\text{time constant } = \frac{17}{f_c} = 8.5 \, ms$
 
 Alternate design :
 
+Using our H-bridge is a trade-off. It is better in the simplicity of circuit design so to minimize risk of damaging circuit. Also it saves space. The alternate H-bridge is more sophisticated. This design gets a faster response time of the signal. However it's easier to cause problem and needs more components.
+
+\setlength{\pic}{0.8\textwidth}
+\begin{figure}[htp]
+\noindent Alternative H-bridge circuit at Figure-\ref{hbridge}
+\center
+\includegraphics[width=\pic]{Alternate_H-bridge}
+\caption{ }
+\label{hbridge}
+\end{figure}
+
 \paragraph{(6) Give the single-most important factor in determining the maximum bandwidth on this distributed system.
 Give the second-most important factor. Justify your answers.  \\ }
 
@@ -200,5 +323,23 @@ Since the system bandwidth was much less than the most possible theoretical band
 The second-most important factor is the bit-rate that determines the amount of time it takes for a single package to be transmitted over the bus.
 
 \section{Post-Mortem Team Evaluation}
+Chen's evaluation in Table-\ref{tab5}
+\begin{table}
+\center
+\tiny
+  \begin{tabular}{|c|c|c|c|c|}
+    \hline
+    Teammate & weakness & strength & failure & success\\
+    \hline
+	Yen-Kai & unknown & Knowledge in C and embedded system & No & Module integration\\
+	Siavash & unknown & knowledge and experience & No & Module integration\\
+	Miao	& unknown & perfectionist and experience in C & No & filter to make Ping works better\\
+	Yan		& unknown & knowledge in mechanical and hard-working & No & detailed measurements\\
+	Chen	& write code slowly & not obvious in this lab & takes time let the motor work backward & H-bridge design\\
+    \hline
+  \end{tabular}
+  \caption{Chen's evaluation}
+  \label{tab5}
+\end{table}
 
 \end{document}

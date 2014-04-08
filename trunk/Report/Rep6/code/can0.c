@@ -57,11 +57,11 @@ PackageID static RCVID;
 unsigned char static RCVData[4];
 int static MailFlag;
 
-//*****************************************************************************
+//************************************************************
 //
 // The CAN controller interrupt handler.
 //
-//*****************************************************************************
+//************************************************************
 void CAN0_Handler(void){ unsigned char data[4];
   unsigned long ulIntStatus, ulIDStatus;
   int i;

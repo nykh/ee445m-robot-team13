@@ -69,6 +69,41 @@ In this lab we will also form a team of 4 or 5, which requires us also to apply 
 
 \section{Analysis}
 
+\paragraph{(1) What is one advantage of the Ping))) sensor over the GP2Y0A21YK sensor? \\ }
+
+Ping))) outputs a PWM signal which duty cycles changes linearly with respect to the distance, so it's easier to convert the raw data to distance.
+
+\paragraph{(2) What is one advantage of the \emph{2Y0A21YK} sensor over the Ping))) sensor \\ }
+
+\emph{GP2Y0A21YK} measures the distance by an analog voltage. It is easier to convert voltage to digital data using ADC compared to measure time in Ping.
+
+\paragraph{(3) Describe the noise of the \emph{GP2Y0A21YK} when measured with a spectrum analyzer. \\ }
+
+The noise of the sensor is periodic square waves. An square wave contains all different frequencies, with Maximum amplitude at the frequency of the square wave.
+You can see that the spectrum detects many different frequencies.
+
+\paragraph{(4) Why did you choose the digital filters for your sensors? \\ }
+What is the time constant for this filter? I.e., if there is a step change in input, how long until your output changes to at least 1/e of the final value?
+
+Since the transition bandwidth of the analog filter is too large for a 2-pole low-pass filter, therefore we use the digital filter to filter out the noise. 
+
+An analog filter with higher poles is more expensive. 
+
+Since we're using a 51 point FIR filter, and $1/e = 0.36$, we need to sample about 17 points to get enough data to represent 0.36 of the input. 
+
+Therefore, $\text{time constant } = \frac{17}{f_c} = 8.5 \, ms$
+
+\paragraph{(5) Present an alternative design for your H-bridge and describe how your H-bridge is better or worse? \\ }
+
+Alternate design :
+
+\paragraph{(6) Give the single-most important factor in determining the maximum bandwidth on this distributed system.
+Give the second-most important factor. Justify your answers.  \\ }
+
+Since the system bandwidth was much less than the most possible theoretical bandwidth according to bit rate, the most important factor is the amount of time needed to prepare a package to be sent in the CAN driver, and the amount of time to receive and interpret an incoming package.
+
+The second-most important factor is the bit-rate that determines the amount of time it takes for a single package to be transmitted over the bus.
+
 \section{Post-Mortem Team Evaluation}
 
 \end{document}

@@ -1,0 +1,20 @@
+Yen-Kai Huang:
+Strength: His code is stylish and easy-readable, strong leadership
+Weakness: None
+
+Siavash Zangeneh Kamali:
+Strength: Extremely strong coding skill, good organization skill
+Weakness: None
+
+Chen Cui:
+Strength: code is easy readable and in good style, good lab partner
+Weakness: None
+
+Yan Zhang:
+Strength: hard working, like to explore deeply
+Weakness: None
+
+Miao Qi:
+Strength: easy to communicate
+Weakness: code is not very portable
+

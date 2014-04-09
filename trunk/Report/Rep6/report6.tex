@@ -72,25 +72,28 @@ In this lab we will also form a team of 4 or 5, which requires us also to apply 
 \label{ping}
 \end{figure}
 
+IR sensor is shown at Figure-\ref{ir}
+
 \setlength{\pic}{0.8\textwidth}
 \begin{figure}[htp]
-\noindent IR sensor is shown at Figure-\ref{ir}
 \center
 \includegraphics[width=\pic]{circuits/IR_Circuit}
 \caption{ }
 \label{ir}
 \end{figure}
 
-
+The DC motor circuit is shown at Figure-\ref{motor}
 
 \setlength{\pic}{0.8\textwidth}
 \begin{figure}[htp]
-\noindent The DC motor circuit is shown at Figure-\ref{motor}
+
 \center
 \includegraphics[width=\pic]{circuits/PWM_Circuit}
 \caption{ }
 \label{motor}
 \end{figure}
+
+\newpage
 
 \section{Software Design} 
 
@@ -233,8 +236,9 @@ of all frequency in the frequency domain.
 \end{table}
 
 
-\paragraph{(e) CAN scope picture} Below is a CAN packet measured at the CANH bus (blue) and the microcontroller output (yellow). It can be observed that the CANH signal is a inverted version of the microcontroller output. Also, the length of
-a typical packet is $ 161.7 \, \mu s $
+\paragraph{(e) CAN scope picture} Below is a CAN packet measured at the CANH bus (yellow) and the microcontroller output (blue). It can be observed that the CANH signal is a inverted version of the microcontroller output, however the 
+microcontroller output is changing between 0 and $3.3 \, V$, and the CANH signal is changing between about 2.5 and $3.8 \, V$.
+Also, the length of a typical packet is $ 161.7 \, \mu s $
 
 \setlength{\pic}{0.8\textwidth}
 \begin{figure}[htp]
@@ -269,7 +273,8 @@ IR sensor. The result is shown in Table-\ref{tab4}.
   \label{tab4}
 \end{table}
 
-Therefore we deduct the maximum sampling rate the system can handle is $\frac{1}{5 \, ms} = 200 \, \text{Hz}$.
+Therefore we deduct the maximum sampling rate the system can handle is $\frac{1}{5 \, ms} \times 4 \text{ bytes} = 800
+ \text{ bytes/sec} $.
 Considering the packet length measured in Figure-\ref{trace}, CAN network itself should not be the limiting factor.
 The limiting factor is probably the execution speed of the data acquisition thread on the receiver side, which
 needs to run a 51-point filter code for each IR sensor data.
@@ -302,7 +307,7 @@ Therefore, $\text{time constant } = \frac{17}{f_c} = 8.5 \, ms$
 
 \paragraph{(5) Present an alternative design for your H-bridge and describe how your H-bridge is better or worse? \\ }
 
-Alternate design :
+Alternate design is shown as Figure-\ref{hbridge}
 
 Using our H-bridge is a trade-off. It is better in the simplicity of circuit design so to minimize risk of damaging circuit. Also it saves space. The alternate H-bridge is more sophisticated. This design gets a faster response time of the signal. However it's easier to cause problem and needs more components.
 
@@ -322,24 +327,24 @@ Since the system bandwidth was much less than the most possible theoretical band
 
 The second-most important factor is the bit-rate that determines the amount of time it takes for a single package to be transmitted over the bus.
 
+\newpage
 \section{Post-Mortem Team Evaluation}
-Chen's evaluation in Table-\ref{tab5}
-\begin{table}
-\center
-\tiny
-  \begin{tabular}{|c|c|c|c|c|}
-    \hline
-    Teammate & weakness & strength & failure & success\\
-    \hline
-	Yen-Kai & unknown & Knowledge in C and embedded system & No & Module integration\\
-	Siavash & unknown & knowledge and experience & No & Module integration\\
-	Miao	& unknown & perfectionist and experience in C & No & filter to make Ping works better\\
-	Yan		& unknown & knowledge in mechanical and hard-working & No & detailed measurements\\
-	Chen	& write code slowly & not obvious in this lab & takes time let the motor work backward & H-bridge design\\
-    \hline
-  \end{tabular}
-  \caption{Chen's evaluation}
-  \label{tab5}
-\end{table}
+Here we evaluate the Strengths and Weaknesses by teammate.
+
+\subsection{Chen Cui}
+\begin{itemize}
+\item[Chen] not obvious in this lab; write code slowly
+\item[YKH] Knowledge in C and embedded system; unknown
+\item[MQ] perfectionist and experience in C; unknown
+\item[Siavash] knowledge and experience; unknown
+\item[ZY] knowledge in mechanical and hard-working; unknown
+\end{itemize}
+
+\subsection{Yen-Kai Huang}
+\subsection{Miao Qi}
+\subsection{Siavash Zangeneh Kamali}
+\subsection{Yan Zhang}
+
+
 
 \end{document}

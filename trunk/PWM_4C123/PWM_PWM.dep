@@ -1,0 +1,10 @@
+Dependencies for Project 'PWM', Target 'PWM': (DO NOT MODIFY !)
+F (.\startup.s)(0x5198397A)(--cpu Cortex-M4 --pd "__EVAL SETA 1" -g --apcs=interwork -I "E:\Program Files (x86)\Keil\ARM\RV31\INC"-I "E:\Program Files (x86)\Keil\ARM\CMSIS\Include"-I "E:\Program Files (x86)\Keil\ARM\Inc\Luminary"--list .\startup.lst --xref -o .\startup.o --depend .\startup.d)
+F (.\PLL.c)(0x522F9256)(-c --cpu Cortex-M4 -D__EVAL -g -O0 --apcs=interwork --split_sections --signed_chars -I.. -I..\..\.. -I..\..\inc-I "E:\Program Files (x86)\Keil\ARM\RV31\INC"-I "E:\Program Files (x86)\Keil\ARM\CMSIS\Include"-I "E:\Program Files (x86)\Keil\ARM\Inc\Luminary"-Drvmdk -DPART_LM4F120H5QR -o .\pll.o --omf_browse .\pll.crf --depend .\pll.d)
+I (PLL.h)(0x522F9256)
+F (.\PWM.c)(0x534C3987)(-c --cpu Cortex-M4 -D__EVAL -g -O0 --apcs=interwork --split_sections --signed_chars -I.. -I..\..\.. -I..\..\inc-I "E:\Program Files (x86)\Keil\ARM\RV31\INC"-I "E:\Program Files (x86)\Keil\ARM\CMSIS\Include"-I "E:\Program Files (x86)\Keil\ARM\Inc\Luminary"-Drvmdk -DPART_LM4F120H5QR -o .\pwm.o --omf_browse .\pwm.crf --depend .\pwm.d)
+I (..\..\inc\tm4c123gh6pm.h)(0x51D4C512)
+I (PWM.h)(0x5345EE55)
+F (.\PWMtest.c)(0x534C2233)()
+I (PLL.h)(0x522F9256)
+I (PWM.h)(0x5345EE55)

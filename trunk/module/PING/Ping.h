@@ -13,7 +13,8 @@ void Ping_Init(void);
 //Send pulse to four Ping))) sensors
 //happens periodically by using timer
 //added in interrupt handler as foreground thread 
-//Fs: about 10Hz
+// measure each of the four sensors in turn
+//Fs: about 40Hz
 //no input and no output
 void Ping_pulse(void);
 

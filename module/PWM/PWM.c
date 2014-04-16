@@ -20,11 +20,11 @@
  For more information about my classes, my research, and my books, see
  http://users.ece.utexas.edu/~valvano/
  */
-#include <tm4c123gh6pm.h>
+#include "../inc/tm4c123gh6pm.h"
 #include "PWM.h"
 
-#define PB4      (*((volatile unsigned long *)0x40005040))
-
+#define PB7      (*((volatile unsigned long *)0x40005200))
+#define PB5      (*((volatile unsigned long *)0x40005080))
 
 // period is 16-bit number of PWM clock cycles in one period (3<=period)
 // duty is number of PWM clock cycles output is high  (2<=duty<=period-1)
@@ -38,11 +38,11 @@ void PWM0_Init(unsigned short period, unsigned short duty){
   SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R1; // 2) activate port B
   delay = SYSCTL_RCGCGPIO_R;               // allow time to finish activating
 	/********************************************/
-  GPIO_PORTB_AFSEL_R |= 0xC0;           // enable alt funct on PB6,7
-	GPIO_PORTB_AFSEL_R &= ~0x30;					// disable alt funct on PB4,5
-	GPIO_PORTB_DIR_R	|= 0x30;						// set PB4,5 output
-  GPIO_PORTB_PCTL_R &= ~0xFF000000;     // configure PB6,7 as PWM0
-  GPIO_PORTB_PCTL_R |= 0x44000000;
+  GPIO_PORTB_AFSEL_R |= 0x50;           // enable alt funct on PB4,6
+	GPIO_PORTB_AFSEL_R &= ~0xA0;					// disable alt funct on PB5,7
+	GPIO_PORTB_DIR_R	|= 0xA0;						// set PB5,7 output
+  GPIO_PORTB_PCTL_R &= ~0x0F0F0000;     // configure PB6,7 as PWM0
+  GPIO_PORTB_PCTL_R |= 0x04040000;
   GPIO_PORTB_AMSEL_R &= ~0xF0;          // disable analog functionality on PB4,5,6,7
 	
   GPIO_PORTB_DEN_R |= 0xF0;             // enable digital I/O on PB4,5,6,7
@@ -50,16 +50,16 @@ void PWM0_Init(unsigned short period, unsigned short duty){
   SYSCTL_RCC_R &= ~SYSCTL_RCC_PWMDIV_M; //    clear PWM divider field
   SYSCTL_RCC_R += SYSCTL_RCC_PWMDIV_2;  //    configure for /2 divider
   PWM0_0_CTL_R = 0;                     // 4) re-loading mode
-	//PWM0_1_CTL_R = 0;                     // 4) re-loading mode
+	PWM0_1_CTL_R = 0;            //!!         // 4) re-loading mode
   PWM0_0_GENA_R = (PWM_0_GENA_ACTCMPAD_ONE|PWM_0_GENA_ACTLOAD_ZERO);
-	//PWM0_1_GENA_R = (PWM_0_GENA_ACTCMPAD_ONE|PWM_0_GENA_ACTLOAD_ZERO);
-  PWM0_0_LOAD_R = period - 1;           // 5) cycles needed to count down to 0
-	//PWM0_1_LOAD_R = period - 1;
+	PWM0_1_GENA_R = (PWM_0_GENA_ACTCMPAD_ONE|PWM_0_GENA_ACTLOAD_ZERO);
+  PWM0_0_LOAD_R = period - 1;           // 15) cycles needed to count down to 0
+	PWM0_1_LOAD_R = period - 1;  //!!
   PWM0_0_CMPA_R = duty - 1;             // 6) count value when output rises
-	//PWM0_1_CMPA_R = duty - 1;
+	PWM0_1_CMPA_R = duty - 1;    //!!
   PWM0_0_CTL_R |= PWM_0_CTL_ENABLE;     // 7) start PWM0
-	//PWM0_1_CTL_R |= PWM_0_CTL_ENABLE;
-  PWM0_ENABLE_R |= PWM_ENABLE_PWM0EN;   // enable PWM0
+	PWM0_1_CTL_R |= PWM_1_CTL_ENABLE;  //!!
+  PWM0_ENABLE_R |= (PWM_ENABLE_PWM0EN | PWM_ENABLE_PWM2EN);   // enable PWM0
 }
 // change duty cycle
 // duty is number of PWM clock cycles output is high  (2<=duty<=period-1)
@@ -84,17 +84,31 @@ void PWM0_0_Direction(int direc){
 }
 
 
+//PWM0=PB6,	DIR=PB7	
+//PWM2=PB4, DIR=PB5
 
+//for left wheel
 void PWM0_0_MotionUpdate(unsigned long speed, unsigned long direction){
 	
 	if(direction){
-		PB4 = 0x10;		// PB4 is direction for left wheel
+		PB7 = 0x80;		// PB4 is direction for left wheel
 		PWM0_0_CMPA_R = speed - 1;             // 6) count value when output rises(direction, speed);
 	}
 	else{
-		PB4 = 0;
+		PB7 = 0;
 		PWM0_0_CMPA_R = PWM0_0_LOAD_R - speed - 1;             // 6) count value when output rises
 	}
 }
 
-
+//for right wheel
+void PWM0_1_MotionUpdate(unsigned long speed, unsigned long direction){
+	
+	if(direction){
+		PB5 = 0x20;		// PB5 is direction for right wheel
+		PWM0_1_CMPA_R = speed - 1;             // 6) count value when output rises(direction, speed);
+	}
+	else{
+		PB5 = 0;
+		PWM0_1_CMPA_R = PWM0_1_LOAD_R - speed - 1;             // 6) count value when output rises
+	}
+}

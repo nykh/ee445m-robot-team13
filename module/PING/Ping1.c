@@ -21,10 +21,6 @@ unsigned long Ping_Distance_Filter[4][4];
 //unsigned long Ping_Distance_cal[10];
 unsigned long Ping_Index[4];
 unsigned long Ping_laststatus;
-unsigned long Ping_test[10];
-unsigned char Ping_testI=0;
-
-extern unsigned char getInterrupt;
 
 //initialize PB4-0
 //PB4 set as output to send 5us pulse to all four Ping))) sensors at same time
@@ -53,24 +49,19 @@ extern unsigned long PulseCount;
 //Send pulse to four Ping))) sensors
 //happens periodically by using timer
 //foreground thread 
-//Fs: about 40Hz
+//Fs: about 10Hz
 //no input and no output
 
 void Ping_pulse(void){
-static unsigned long PulseCount=0;
 unsigned char delay_count;
-	GPIO_PORTB_IM_R &= ~(0x01<<(PulseCount%4));
-	GPIO_PORTB_DIR_R |= 0x01<<(PulseCount%4);
-	PB3_0 |= 0x01<<(PulseCount%4);
+	GPIO_PORTB_DEN_R |= 0x10;
+	GPIO_PORTB_DEN_R &= ~0x0F;
+	PB4 = 0x10;
 	//blind-wait
 	for(delay_count=0; delay_count<60; ){delay_count++;}
-	PB3_0 &= ~(0x01<<(PulseCount%4));
-	//PB4 = 0x00;
-	GPIO_PORTB_DIR_R &= ~(0x01<<(PulseCount%4));
-	GPIO_PORTB_IM_R |= 0x01<<(PulseCount%4);
-	PulseCount++;
-	//GPIO_PORTB_DEN_R &= ~0x10;
-	//GPIO_PORTB_DEN_R |=  0x0F;
+	PB4 = 0x00;
+	GPIO_PORTB_DEN_R &= ~0x10;
+	GPIO_PORTB_DEN_R |=  0x0F;
 }
 
 unsigned long median(unsigned long *data_record){
@@ -113,12 +104,11 @@ unsigned long tin;
 for (bits_I=0; bits_I<4;bits_I++)
 	if(Ping_Update&(1<<bits_I))
 		{tin = OS_TimeDifference(Ping_Finishtime[bits_I],Ping_Lasttime[bits_I]);
-		Ping_test[Ping_testI] = tin;
-		Ping_testI++;
 		tin = ((tin/40)*(331+0.6*Temperature+0.5))/4;
 		Ping_Distance_Filter[bits_I][Ping_Index[bits_I]&0x3] = tin;
 		Ping_Index[bits_I]++;
 		Ping_Distance_Result[bits_I] = median(&Ping_Distance_Filter[bits_I][0]);
+//		Ping_Distance_Result[bits_I] = tin;
 		Ping_Update &= ~(1<<bits_I);
 		}
 }
@@ -127,8 +117,8 @@ for (bits_I=0; bits_I<4;bits_I++)
 //put inside PORTB_handler
 //input system time, resolution: 12.5ns
 //no output
-void GPIOPortB_Handler(void){
-//void Ping_measure(void){
+//void GPIOPortB_Handler(void){
+void Ping_measure(void){
 unsigned char bits_I = 0;
 unsigned long Ping_status;
  Ping_status	= PB3_0;
@@ -140,7 +130,6 @@ for (bits_I=0; bits_I<4;bits_I++)
 for (bits_I=0; bits_I<4;bits_I++)
 	{Ping_Finishtime[bits_I] = (~(Ping_status&(1<<bits_I)) && (Ping_laststatus&(1<<bits_I)))? OS_Time():Ping_Finishtime[bits_I]; 
 	 GPIO_PORTB_ICR_R = 1<<bits_I;
-	 Ping_Update |= 1<<bits_I;
-	}
+	 Ping_Update |= 1<<bits_I;}
 Ping_laststatus = Ping_status;
 }

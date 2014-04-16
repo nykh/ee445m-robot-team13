@@ -11,6 +11,7 @@
 #define HEAP_SIZE 3000
 
 short Heap[HEAP_SIZE];
+
 short *LastFreeBlock = Heap;
 
 /* Heap_Init
@@ -32,11 +33,10 @@ void Heap_Init(void) {
  */
 void* Heap_Malloc(unsigned short requestedSpace) { // in unit of byte
 	short *fp;
-	unsigned short interval;
 	short BlockSize;
 	requestedSpace = ((requestedSpace+7)/8)*4;
 	// round up to unit of 8 bytes, then convert to unit of short
-
+	
 	for (fp = LastFreeBlock ; fp < &Heap[HEAP_SIZE-1]; fp += BlockSize+2){
 		BlockSize = *fp;
 		

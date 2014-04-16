@@ -20,8 +20,7 @@
  For more information about my classes, my research, and my books, see
  http://users.ece.utexas.edu/~valvano/
  */
-#include <tm4c123gh6pm.h>
-//#include "tm4c123gh6pm.h"
+#include "../inc/tm4c123gh6pm.h"
 #include "PWM.h"
 
 #define PB7      (*((volatile unsigned long *)0x40005200))
@@ -61,7 +60,6 @@ void PWM0_Init(unsigned short period, unsigned short duty){
   PWM0_0_CTL_R |= PWM_0_CTL_ENABLE;     // 7) start PWM0
 	PWM0_1_CTL_R |= PWM_1_CTL_ENABLE;  //!!
   PWM0_ENABLE_R |= (PWM_ENABLE_PWM0EN | PWM_ENABLE_PWM2EN);   // enable PWM0
-	//PWM0_ENABLE_R |= PWM_ENABLE_PWM2EN;   // enable PWM0
 }
 // change duty cycle
 // duty is number of PWM clock cycles output is high  (2<=duty<=period-1)

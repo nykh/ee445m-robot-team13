@@ -1,6 +1,6 @@
 #include "os.h"
 #include "semaphore.h"
-#include "heap.h"
+#include "heap2.h"
 #include "FIFO.h"
 
 #include "inc/hw_types.h"
@@ -643,20 +643,6 @@ int OS_AddButtonTask(void(*task)(void), unsigned long priority) {
 #undef ONE_IN_USE
 #undef BOTH_IN_USE
 
-//******** OS_AddDownTask *************** 
-// add a background task to run whenever the Down arror button is pushed
-// Inputs: pointer to a void/void background function
-//         priority 0 is highest, 5 is lowest
-// Outputs: 1 if successful, 0 if this thread can not be added
-// It is assumed user task will run to completion and return
-// This task can not spin block loop sleep or kill
-// It can call issue OS_Signal, it can call OS_AddThread
-// This task does not have a Thread ID
-// In lab 2, this function can be ignored
-// In lab 3, this command will be called will be called 0 or 1 times
-// In lab 3, there will be up to four background threads, and this priority field 
-//           determines the relative priority of these four threads
-int OS_AddDownTask(void(*task)(void), unsigned long priority);
 
 // ******** OS_Sleep ************
 // place this thread into a dormant state

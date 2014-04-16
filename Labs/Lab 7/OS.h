@@ -85,14 +85,7 @@ void OS_bSignal(Sema4Type *semaPt);
 // In Lab 3, you can ignore the stackSize fields
 int OS_AddThread(void(*task)(void), 
    unsigned long stackSize, unsigned long priority);
-	 
-//******** OS_AddThreads *************** 
-// add 3 foregound threads to the scheduler
-// Inputs: pointers to a 3 void/void foreground tasks
-// Outputs: 1 if successful, 0 if this thread can not be added
-int OS_AddThreads(void(*task0)(void),
-                 void(*task1)(void), 
-                 void(*task2)(void));
+
 
 //******** OS_Id *************** 
 // returns the thread ID for the currently running thread

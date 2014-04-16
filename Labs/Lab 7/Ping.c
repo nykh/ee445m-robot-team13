@@ -9,7 +9,7 @@
 #include "OS.h"
 
 #define Sensors 			    (*((volatile unsigned long *)0x4000503C))
-#define PB3_0                   0x0F
+#define PB3_0             0x0F
 #define Temperature				20 
 #define NVIC_EN0_INT1			2
 
@@ -20,6 +20,8 @@ static unsigned long Ping_Distance_Result[4];
 static unsigned long Ping_Distance_Filter[4][4];
 static unsigned long Ping_Index[4];
 
+static unsigned long LastStatus;
+
 //initialize PB4-0
 //PB4 set as output to send 5us pulse to all four Ping))) sensors at same time
 //PB3-0 set as input to capture input from sensors
@@ -28,19 +30,19 @@ void Ping_Init(void){
   SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R1;
   /*************************************************/
   
-  Ping_laststatus = 0;              // (b) initialize status
+  LastStatus = 0;              // (b) initialize status
   
-  GPIO_PORTB_DIR_R &= ~PB0_3;    // (c) make PB3-0 in
-  GPIO_PORTB_AFSEL_R &= ~PB0_3;  //     disable alt funct on PB4-0
-  GPIO_PORTB_DEN_R |= PB0_3;     //     enable digital I/O on PB4-0   
+  GPIO_PORTB_DIR_R &= ~PB3_0;    // (c) make PB3-0 in
+  GPIO_PORTB_AFSEL_R &= ~PB3_0;  //     disable alt funct on PB4-0
+  GPIO_PORTB_DEN_R |= PB3_0;     //     enable digital I/O on PB4-0   
   GPIO_PORTB_PCTL_R &= ~0x000FFFFF; // configure PB4-0 as GPIO
-  GPIO_PORTB_AMSEL_R =~PB0_3;    //     disable analog functionality on PB
-  GPIO_PORTB_PDR_R |= PB0_3;     //     enable pull-down on PF4-0
+  GPIO_PORTB_AMSEL_R =~PB3_0;    //     disable analog functionality on PB
+  GPIO_PORTB_PDR_R |= PB3_0;     //     enable pull-down on PF4-0
   
-  GPIO_PORTB_IS_R &= ~PB0_3;     // (d) PB3-0 is edge-sensitive
-  GPIO_PORTB_IBE_R |= PB0_3;     //      PB3-0 is both edges
-  GPIO_PORTB_ICR_R =  PB0_3;     // (e) clear flag3-0
-  GPIO_PORTB_IM_R |= PB0_3;      // (f) arm interrupt on PB3-0
+  GPIO_PORTB_IS_R &= ~PB3_0;     // (d) PB3-0 is edge-sensitive
+  GPIO_PORTB_IBE_R |= PB3_0;     //      PB3-0 is both edges
+  GPIO_PORTB_ICR_R =  PB3_0;     // (e) clear flag3-0
+  GPIO_PORTB_IM_R |= PB3_0;      // (f) arm interrupt on PB3-0
   
   NVIC_PRI0_R = (NVIC_PRI0_R&0xFFFF00FF)|0x00004000; // (g) priority 2
   NVIC_EN0_R |= NVIC_EN0_INT1;  // (h) enable interrupt 1 in NVIC
@@ -57,7 +59,7 @@ void Ping_Init(void){
 void Ping_pulse(void){
 	static unsigned long PulseCount=0;
 	unsigned char delay_count;
-	static unsigned char mask = 0x01 << PulseCount;
+	unsigned char mask = 0x01 << PulseCount;
 	
 	GPIO_PORTB_IM_R &= ~mask;
 	GPIO_PORTB_DIR_R |= mask;
@@ -77,7 +79,7 @@ void Ping_pulse(void){
 static unsigned long median(unsigned long *data_record){
 	unsigned long buffer[4];
 	//compare the oldest two data
-	if((data_record[0]<data_record[1])
+	if(data_record[0]<data_record[1])
 		{buffer[0]=*data_record; buffer[1]=data_record[1];}		
 	else
 		{buffer[1]=*data_record; buffer[0]=data_record[1];}
@@ -134,7 +136,7 @@ void Distance(void){
 //put inside PORTB_handler
 //input system time, resolution: 12.5ns
 //no output
-static unsigned long LastStatus;
+
 void GPIOPortB_Handler(void){
 	unsigned char i;
 	unsigned char mask;
@@ -158,7 +160,7 @@ void GPIOPortB_Handler(void){
 		}
 	}
 	
-	GPIO_PORTB_ICR_R = PB0_3;
+	GPIO_PORTB_ICR_R = PB3_0;
 	
 	LastStatus = CurrStatus;
 }

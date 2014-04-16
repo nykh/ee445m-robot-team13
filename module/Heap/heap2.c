@@ -21,7 +21,7 @@ void Heap_Init(void) {
 	int i;	
 	// These now allow Heap to be reinitialized
 	LastFreeBlock = Heap;
-	for(i = 0; i < HEAP_SIZE; ++i) Heap[i] = 0;
+	for(i = 0; i < HEAP_SIZE; ++i) heap[i] = 0;
 	Heap[0] = Heap[HEAP_SIZE-1] = HEAP_SIZE-2;
 }
 
@@ -33,12 +33,11 @@ void Heap_Init(void) {
 void* Heap_Malloc(unsigned short requestedSpace) { // in unit of byte
 	short *fp;
 	unsigned short interval;
-	short BlockSize;
 	requestedSpace = ((requestedSpace+7)/8)*4;
 	// round up to unit of 8 bytes, then convert to unit of short
-
+	
 	for (fp = LastFreeBlock ; fp < &Heap[HEAP_SIZE-1]; fp += BlockSize+2){
-		BlockSize = *fp;
+		short BlockSize = *fp;
 		
 		if (BlockSize > 0 ) { // Free block
 			if (requestedSpace <= BlockSize) {

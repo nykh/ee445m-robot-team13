@@ -1,4 +1,4 @@
-/* heap.c
+/* heap2.c
  * Author: Siavash Zangeneh Kamali
  *         Nick Huang
  * Implements Knuth Heap, each frame stores the size of chunk. 
@@ -22,7 +22,7 @@ void Heap_Init(void) {
 	int i;	
 	// These now allow Heap to be reinitialized
 	LastFreeBlock = Heap;
-	for(i = 0; i < HEAP_SIZE; ++i) Heap[i] = 0;
+	for(i = 1; i < HEAP_SIZE-1; ++i) Heap[i] = 0;
 	Heap[0] = Heap[HEAP_SIZE-1] = HEAP_SIZE-2;
 }
 
@@ -45,12 +45,12 @@ void* Heap_Malloc(unsigned short requestedSpace) { // in unit of byte
 				if (BlockSize - requestedSpace < 3) { // Result of (BlockSize - requestedSpace) is non-negative, so no bug
 					fp[0] = fp[BlockSize+1] = -BlockSize;
 					LastFreeBlock = fp + BlockSize + 2;
-					return (void *) fp[1];
+					return (void *) &fp[1];
 				} else { // Cut out a chunk from the big chunk
 					fp[0] = fp[requestedSpace + 1] = -requestedSpace;
 					fp[requestedSpace+2] = fp[BlockSize+1] = (BlockSize-requestedSpace-2);
 					LastFreeBlock = fp + requestedSpace + 2;
-					return (void *) fp[1];
+					return (void *) &fp[1];
 				}
 			} 
 		} else if (BlockSize < 0 ) { // Occupied

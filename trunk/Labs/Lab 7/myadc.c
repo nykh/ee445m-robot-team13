@@ -51,7 +51,7 @@ long StartCritical (void);    // previous I bit, disable interrupts
 void EndCritical(long sr);    // restore I bit to previous value
 void WaitForInterrupt(void);  // low power mode
 
-static void (*ADCTask) (unsigned short );
+static void (*ADCTask) (unsigned short *);
 
 #define ADC_NOT_DONE  	0
 #define ADC_DONE 				1
@@ -111,8 +111,9 @@ static unsigned int SamplesCollected;
 //				buffer is the array that will hold the results
 //				User has to make sure that numberOfSamples is within the capacity of buffer
 // Output: None
-void myADC_Collect4(unsigned int channelNum, unsigned int fs, void  (*task) (unsigned short), unsigned int numberOfSamples){
+void myADC_Collect4(unsigned int fs, void  (*task) (unsigned short *), unsigned int numberOfSamples){
 	long sr;
+	
 	// calculate period and presclae based on fs
 	int N = 4e8 / (fs * PLL_getDevisor() ) ; // fs /*100-10000 Hz*/; /* 1e3-1e7 */
 	int prescale = N / 65535;
@@ -124,12 +125,13 @@ void myADC_Collect4(unsigned int channelNum, unsigned int fs, void  (*task) (uns
 	CollectNumberOfSamples = numberOfSamples;
 	SamplesCollected = 0;
 	
-  sr = StartCritical();
+    sr = StartCritical();
 	//Call ADC Init to initialize the timer and ADC
-	ADCInit(channelNum, ADC_TIMER_TRIGGER,  prescale, period);
-  EndCritical(sr);
+	myADCInit(prescale, period);
+    EndCritical(sr);
 }
 
+#if 0 // Deprecated
 //------------ADC_Open------------
 // Initializes ADC for software trigerred sampling
 // Input: channelNum should be between 0 and 11
@@ -139,6 +141,8 @@ void ADC_Open(unsigned char channelNum){
 	ADCInit(channelNum, ADC_SW_TRIGGER, 0, 0);
 }
 
+#endif 
+
 //------------ADCInit------------
 // Private function that will initialize ADC or timer
 // Input: channelNum should be between 0 and 11
@@ -147,6 +151,7 @@ void ADC_Open(unsigned char channelNum){
 // Output: None
 static void myADCInit(unsigned char prescale, unsigned short period) {
 	volatile unsigned long delay;
+	/********************** New style *******************************/	
 	SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R4;
 	delay = SYSCTL_RCGCGPIO_R;      // 2) allow time for clock to stabilize
 	delay = SYSCTL_RCGCGPIO_R;
@@ -154,69 +159,68 @@ static void myADCInit(unsigned char prescale, unsigned short period) {
 	delay = SYSCTL_RCGCGPIO_R;
 	delay = SYSCTL_RCGCGPIO_R;
 	delay = SYSCTL_RCGCGPIO_R;
-
+	/****************************************************************/
+	
 	GPIO_PORTE_DIR_R &= ~PE3_0_M;  // 3.0) make PE3-0 input
     GPIO_PORTE_AFSEL_R |= PE3_0_M; // 4.0) enable alternate function on PE3-0
     GPIO_PORTE_DEN_R &= ~PE3_0_M;  // 5.0) disable digital I/O on PE3-0
     GPIO_PORTE_AMSEL_R |= PE3_0_M; // 6.0) enable analog functionality on PE3-0
 	
 	// Timer Trigger
-		/********************** New style *******************************/ 		
-		SYSCTL_RCGCADC_R |= SYSCTL_RCGCADC_R0;   // 7) activate ADC0 (legacy code)
-		delay = SYSCTL_RCGCADC_R;         // 8) allow time for clock to stabilize
-		delay = SYSCTL_RCGCADC_R;
-		delay = SYSCTL_RCGCADC_R;
-		delay = SYSCTL_RCGCADC_R;
-		delay = SYSCTL_RCGCADC_R;
-		delay = SYSCTL_RCGCADC_R;
-		/****************************************************************/
-		
-		//SYSCTL_RCGC0_R &= ~0x00000300;  // 9) configure for 125K (legacy code)
-		ADC0_PC_R &= ~0xF;              // 9) clear max sample rate field
-		ADC0_PC_R |= 0x1;               //    configure for 125K samples/sec
-		ADC0_SSPRI_R = 0x3210;          // 10) Sequencer 3 is lowest priority
-		ADC0_ACTSS_R &= ~0x0008;        // 11) disable sample sequencer 3
-		// **** general initialization ****
-		
-		/********************** New style *******************************/ 
-		SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R0;    // activate timer0 (legacy code
-		delay = SYSCTL_RCGCTIMER_R;                   // allow time to finish activating
-		delay = SYSCTL_RCGCTIMER_R;
-		delay = SYSCTL_RCGCTIMER_R;
-		delay = SYSCTL_RCGCTIMER_R;
-		/****************************************************************/
-		
-		TIMER0_CTL_R &= ~TIMER_CTL_TAEN;          // disable timer0A during setup
-		TIMER0_CTL_R |= TIMER_CTL_TAOTE;          // enable timer0A trigger to ADC
-		TIMER0_CFG_R = TIMER_CFG_16_BIT;          // configure for 16-bit timer mode
-		// **** timer0A initialization ****
-		TIMER0_TAMR_R = TIMER_TAMR_TAMR_PERIOD;   // configure for periodic mode, default down-count settings
-		TIMER0_TAPR_R = prescale;                 // prescale value for trigger
-		TIMER0_TAILR_R = period;                  // start value for trigger
-		TIMER0_IMR_R &= ~TIMER_IMR_TATOIM;        // disable timeout (rollover) interrupt
-		TIMER0_CTL_R |= TIMER_CTL_TAEN;           // enable timer0A 16-b, periodic, no interrupts
-		
-		// **** ADC initialization ****
-		ADC0_EMUX_R &= ~(ADC_EMUX_EM3_M | ADC_EMUX_EM2_M | ADC_EMUX_EM1_M | ADC_EMUX_EM0_M); 
-		// clear SS3 trigger select field
-		ADC0_EMUX_R |= (ADC_EMUX_EM3_TIMER | ADC_EMUX_EM2_TIMER | ADC_EMUX_EM1_TIMER | ADC_EMUX_EM0_TIMER);
-		// configure for timer trigger event
-		ADC0_SSMUX3_R = ADC0_SSMUX3_R &  ~ADC_SSMUX3_MUX0_M | (3 <<ADC_SSMUX3_MUX0_S);
-		// clear SS3 1st sample input select field
-		// configure for 'channelNum' as first sample input
-		ADC0_SSCTL3_R = (0                        // settings for 1st sample:
-						 & ~ADC_SSCTL3_TS0        // read pin specified by ADC0_SSMUX3_R
-						 | ADC_SSCTL3_IE0         // raw interrupt asserted here
-						 | ADC_SSCTL3_END0        // sample is end of sequence (hardwired)
-						 & ~ADC_SSCTL3_D0);       // differential mode not used
-		ADC0_IM_R |= ADC_IM_MASK3;                // enable SS3 interrupts
-		ADC0_ACTSS_R |= ADC_ACTSS_ASEN3;          // enable sample sequencer 3
-		// **** interrupt initialization ****     // ADC3=priority 2
-		NVIC_PRI4_R = (NVIC_PRI4_R&0xFFFF00FF)|(2<<13); // bits 13-15
-		NVIC_EN0_R = NVIC_EN0_INT17;              // enable interrupt 17 in NVIC
+	/********************** New style *******************************/ 		
+	SYSCTL_RCGCADC_R |= SYSCTL_RCGCADC_R0;   // 7) activate ADC0 (legacy code)
+	delay = SYSCTL_RCGCADC_R;         // 8) allow time for clock to stabilize
+	delay = SYSCTL_RCGCADC_R;
+	delay = SYSCTL_RCGCADC_R;
+	delay = SYSCTL_RCGCADC_R;
+	delay = SYSCTL_RCGCADC_R;
+	delay = SYSCTL_RCGCADC_R;
+	/****************************************************************/
+	
+	ADC0_PC_R &= ~0xF;                  // 9) clear max sample rate field
+	ADC0_PC_R |= 0x1;                    //    configure for 125K samples/sec
+	ADC0_SSPRI_R = 0x3210;              // 10) Sequencer 3 is lowest priority
+	ADC0_ACTSS_R &= ~ADC_ACTSS_ASEN2;   // 11) disable sample sequencer 2
+	
+	/********************** New style *******************************/ 
+	SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R0;    // activate timer0 (legacy code
+	delay = SYSCTL_RCGCTIMER_R;                   // allow time to finish activating
+	delay = SYSCTL_RCGCTIMER_R;
+	delay = SYSCTL_RCGCTIMER_R;
+	delay = SYSCTL_RCGCTIMER_R;
+	/****************************************************************/
+	
+	TIMER0_CTL_R &= ~TIMER_CTL_TAEN;          // disable timer0A during setup
+	TIMER0_CTL_R |= TIMER_CTL_TAOTE;          // enable timer0A trigger to ADC
+	TIMER0_CFG_R = TIMER_CFG_16_BIT;          // configure for 16-bit timer mode
+	// **** timer0A initialization ****
+	TIMER0_TAMR_R = TIMER_TAMR_TAMR_PERIOD;   // configure for periodic mode, default down-count settings
+	TIMER0_TAPR_R = prescale;                 // prescale value for trigger
+	TIMER0_TAILR_R = period;                  // start value for trigger
+	TIMER0_IMR_R &= ~TIMER_IMR_TATOIM;        // disable timeout (rollover) interrupt
+	TIMER0_CTL_R |= TIMER_CTL_TAEN;           // enable timer0A 16-b, periodic, no interrupts
+	
+	// **** ADC initialization ****
+	ADC0_EMUX_R &= ~ADC_EMUX_EM2_M; 
+	// clear SS3 trigger select field
+	ADC0_EMUX_R |= ADC_EMUX_EM2_TIMER;
+	// configure for timer trigger event
+	ADC0_SSMUX2_R = ADC0_SSMUX2_R &~0xFFFF | 0x3210;
+	// clear SS3 1st sample input select field
+	// configure for 'channelNum' as first sample input
+	ADC0_SSCTL2_R = (0                        // settings for 1st sample:
+					 & ~ADC_SSCTL2_TS0        // read pin specified by ADC0_SSMUX2_R
+					 | ADC_SSCTL2_IE0         // raw interrupt asserted here
+					 | ADC_SSCTL2_END0        // sample is end of sequence (hardwired)
+					 & ~ADC_SSCTL2_D0);       // differential mode not used
+	ADC0_IM_R |= ADC_IM_MASK2;                // enable SS2 interrupts
+	ADC0_ACTSS_R |= ADC_ACTSS_ASEN2;          // enable sample sequencer 3
+	// **** interrupt initialization ****     // ADC2=priority 2
+	NVIC_PRI4_R = (NVIC_PRI4_R&0xFFFFFF00)|(2<<5); // bits 5-7
+	NVIC_EN0_R = NVIC_EN0_INT16;              // enable interrupt 16 in NVIC
 }
 
-
+#if 0 // Deprecated
 //------------ADC_In------------
 // Public function that will sample one instance of ADC
 // Input: None
@@ -239,16 +243,18 @@ unsigned char ADC_Status(void) {
 	return ADC_Collect_Flag;
 }
 
-//------------ADC0Seq3_Handler------------
+#endif
+
+//------------ADC0Seq2_Handler------------
 // ADC interrupt handler for periodic sampling
 // It will put the new data is the data array
-void ADC0Seq3_Handler(void){
-  unsigned short ADCvalue;
-  ADC0_ISC_R = ADC_ISC_IN3;                 // acknowledge ADC sequence 3 completion
-  ADCvalue = ADC0_SSFIFO3_R&ADC_SSFIFO3_DATA_M;
-	ADCTask (ADCvalue);
-	if (SamplesCollected++ >= CollectNumberOfSamples){
-		SamplesCollected = CollectNumberOfSamples;
-		ADC_Collect_Flag = ADC_DONE;
-	}
+void ADC0Seq2_Handler(void){
+  unsigned short ADCvalue[4];
+  ADC0_ISC_R = ADC_ISC_IN2;                 // acknowledge ADC sequence 3 completion
+  ADCvalue[0] = ADC0_SSFIFO2_R&ADC_SSFIFO3_DATA_M;
+  ADCvalue[1] = ADC0_SSFIFO2_R&ADC_SSFIFO3_DATA_M;
+  ADCvalue[2] = ADC0_SSFIFO2_R&ADC_SSFIFO3_DATA_M;
+  ADCvalue[3] = ADC0_SSFIFO2_R&ADC_SSFIFO3_DATA_M;
+  
+  ADCTask(ADCvalue);
 }

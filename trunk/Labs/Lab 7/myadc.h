@@ -56,9 +56,10 @@
 #if 0 // Deprecated
 int myADC_Open(unsigned int channelNum);
 unsigned short ADC_In(void);
+unsigned char ADC_Status(void);
 #endif
 
 // The "task" is now responsible for storing the data, the ADC_Collect function itself no long does this
-void myADC_Collect(unsigned int channelNum, unsigned int fs, void  (*task) (unsigned short), unsigned int numberOfSamples);
+// what's passed to "task" is now an array of 4 values
+void myADC_Collect4(unsigned int fs, void  (*task) (unsigned short *), unsigned int numberOfSamples);
 
-unsigned char ADC_Status(void);

@@ -53,13 +53,6 @@ void WaitForInterrupt(void);  // low power mode
 
 static void (*ADCTask) (unsigned short *);
 
-#define ADC_NOT_DONE  	0
-#define ADC_DONE 				1
-static unsigned char ADC_Collect_Flag = ADC_NOT_DONE;
-
-
-#define ADC_SW_TRIGGER    0
-#define ADC_TIMER_TRIGGER 1
 static void myADCInit(unsigned char prescale, unsigned short period);
 
 
@@ -99,10 +92,6 @@ static void myADCInit(unsigned char prescale, unsigned short period);
 // SS2 1st sample source: programmable using variable 'channelNum' [0:11]
 // SS2 interrupts: enabled and promoted to controller
 
-static unsigned int CollectNumberOfSamples;
-static unsigned int SamplesCollected;
-
-
 //------------ADC_Collect------------
 // Starts the collection of multiple ADC samples at a certain frequency
 // ADC Doesn't need to be initialized
@@ -120,11 +109,8 @@ void myADC_Collect4(unsigned int fs, void  (*task) (unsigned short *), unsigned 
 	int period = ( (N + ((prescale+1)/2))/(prescale+1)  )- 1;
 		
 	// raised semaphore
-	ADC_Collect_Flag = ADC_NOT_DONE;
 	ADCTask = task;
-	CollectNumberOfSamples = numberOfSamples;
-	SamplesCollected = 0;
-	
+
     sr = StartCritical();
 	//Call ADC Init to initialize the timer and ADC
 	myADCInit(prescale, period);

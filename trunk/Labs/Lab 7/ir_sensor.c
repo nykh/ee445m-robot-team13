@@ -16,6 +16,8 @@
 #define SAMPLING_RATE 2000
 #define TIMESLICE 2*TIME_1MS  // thread switch time in system time units
 
+Sema4Type	Sema4IRDataAvailable;
+
 /********************** Data Structure *******************/
 #define FIFOSIZE   64         // size of the FIFOs (must be power of 2)
 #define FIFOSUCCESS 1         // return value on success
@@ -51,17 +53,17 @@ typedef struct {
 } FilterType;
 
 static unsigned short IRsensor1;
+static unsigned short IRsensor2;
+static unsigned short IRsensor3;
+static unsigned short IRsensor4;
 
 static FilterType filter1 = {{0},FILTER_LENGTH-1};
 
 #if LAB_DEMO == 7
 
-static FilterType filter2;
-filter2.index = FILTER_LENGTH-1; // to let pre-increment start at x[FILTER_LENGTH]
-static FilterType filter3;
-filter3.index = FILTER_LENGTH-1; // to let pre-increment start at x[FILTER_LENGTH]
-static FilterType filter4;
-filter4.index = FILTER_LENGTH-1; // to let pre-increment start at x[FILTER_LENGTH]
+static FilterType filter2 = {{0},FILTER_LENGTH-1};
+static FilterType filter3 = {{0},FILTER_LENGTH-1};
+static FilterType filter4 = {{0},FILTER_LENGTH-1};
 
 #endif
 
@@ -120,17 +122,15 @@ static void Consumer(void) {
 		// Get data, will block if FIFO is empty
 		unsigned short data;
 		IR1Fifo_Get(&data);
-			
-		// Choosing whether to apply the filter
+		
+		// Apply filter
 		IRsensor1 = Filter(&filter1, data);
-		
-		
 	}
 }
 
 
 void IR_Init(void) {
-  OS_InitSemaphore(&Sema4DataAvailable, 0);
+  OS_InitSemaphore(&Sema4IRDataAvailable, 0);
   
   IR1Fifo_Init();
   

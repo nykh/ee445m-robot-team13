@@ -54,6 +54,7 @@ AddIndexFifo(Tx, FIFOSIZE, char, FIFOSUCCESS, FIFOFAIL)
 // Baud rate is 115200 bits/sec
 void UART_Init(void){
 	long sr = StartCritical();
+	
 	/***************** new style *********************/
   SYSCTL_RCGCUART_R |= SYSCTL_RCGCUART_R0; // activate UART0
   SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R0; // activate port A

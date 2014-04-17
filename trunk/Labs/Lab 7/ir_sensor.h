@@ -3,7 +3,7 @@
 #ifndef __IR_SENSOR_H__
 #define __IR_SENSOR_H__
 
-#define LAB_DEMO 6
+#define LAB_DEMO 7
 
 void IR_Init(void);
 void IR_getValues (unsigned short *buffer);

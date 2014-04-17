@@ -1,7 +1,7 @@
 // ADCT0ATrigger.c
 // Runs on LM4F120
 // Provide a function that initializes Timer0A to trigger ADC
-// SS3 conversions and request an interrupt when the conversion
+// SS2 conversions and request an interrupt when the conversion
 // is complete.
 // Daniel Valvano
 // October 25, 2012
@@ -41,7 +41,7 @@
 #include "inc/tm4c123gh6pm.h"
 #include "os.h"
 
-#define NVIC_EN0_INT17          0x00020000  // Interrupt 17 enable
+#define NVIC_EN0_INT16          0x00010000  // Interrupt 17 enable
 
 #define PE3_0_M                 0x0F
 
@@ -60,7 +60,7 @@ static unsigned char ADC_Collect_Flag = ADC_NOT_DONE;
 
 #define ADC_SW_TRIGGER    0
 #define ADC_TIMER_TRIGGER 1
-static void ADCInit(unsigned char channelNum, unsigned char mode, unsigned char prescale, unsigned short period);
+static void myADCInit(unsigned char prescale, unsigned short period);
 
 
 // There are many choices to make when using the ADC, and many
@@ -95,9 +95,9 @@ static void ADCInit(unsigned char channelNum, unsigned char mode, unsigned char 
 // Sequencer 1 priority: 2nd
 // Sequencer 2 priority: 3rd
 // Sequencer 3 priority: 4th (lowest)
-// SS3 triggering event: Timer0A
-// SS3 1st sample source: programmable using variable 'channelNum' [0:11]
-// SS3 interrupts: enabled and promoted to controller
+// SS2 triggering event: Timer0A
+// SS2 1st sample source: programmable using variable 'channelNum' [0:11]
+// SS2 interrupts: enabled and promoted to controller
 
 static unsigned int CollectNumberOfSamples;
 static unsigned int SamplesCollected;
@@ -214,7 +214,7 @@ static void myADCInit(unsigned char prescale, unsigned short period) {
 					 | ADC_SSCTL2_END0        // sample is end of sequence (hardwired)
 					 & ~ADC_SSCTL2_D0);       // differential mode not used
 	ADC0_IM_R |= ADC_IM_MASK2;                // enable SS2 interrupts
-	ADC0_ACTSS_R |= ADC_ACTSS_ASEN2;          // enable sample sequencer 3
+	ADC0_ACTSS_R |= ADC_ACTSS_ASEN2;          // enable sample sequencer 2
 	// **** interrupt initialization ****     // ADC2=priority 2
 	NVIC_PRI4_R = (NVIC_PRI4_R&0xFFFFFF00)|(2<<5); // bits 5-7
 	NVIC_EN0_R = NVIC_EN0_INT16;              // enable interrupt 16 in NVIC
@@ -228,7 +228,7 @@ static void myADCInit(unsigned char prescale, unsigned short period) {
 //				If ADC is collecting samples periodically, the function return 0xFFFF
 // Output: None
 unsigned short ADC_In(void){  unsigned short result;
-  ADC1_PSSI_R = 0x0008;            // 1) initiate SS3
+  ADC1_PSSI_R = 0x0008;            // 1) initiate SS2
   while((ADC1_RIS_R&0x08)==0){};   // 2) wait for conversion done
   result = ADC1_SSFIFO3_R&0xFFF;   // 3) read result
   ADC1_ISC_R = 0x0008;             // 4) acknowledge completion
@@ -250,11 +250,11 @@ unsigned char ADC_Status(void) {
 // It will put the new data is the data array
 void ADC0Seq2_Handler(void){
   unsigned short ADCvalue[4];
-  ADC0_ISC_R = ADC_ISC_IN2;                 // acknowledge ADC sequence 3 completion
-  ADCvalue[0] = ADC0_SSFIFO2_R&ADC_SSFIFO3_DATA_M;
-  ADCvalue[1] = ADC0_SSFIFO2_R&ADC_SSFIFO3_DATA_M;
-  ADCvalue[2] = ADC0_SSFIFO2_R&ADC_SSFIFO3_DATA_M;
-  ADCvalue[3] = ADC0_SSFIFO2_R&ADC_SSFIFO3_DATA_M;
+  ADC0_ISC_R = ADC_ISC_IN2;                 // acknowledge ADC sequence 2 completion
+  ADCvalue[0] = ADC0_SSFIFO2_R&ADC_SSFIFO2_DATA_M;
+  ADCvalue[1] = ADC0_SSFIFO2_R&ADC_SSFIFO2_DATA_M;
+  ADCvalue[2] = ADC0_SSFIFO2_R&ADC_SSFIFO2_DATA_M;
+  ADCvalue[3] = ADC0_SSFIFO2_R&ADC_SSFIFO2_DATA_M;
   
   ADCTask(ADCvalue);
 }

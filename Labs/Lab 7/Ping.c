@@ -57,7 +57,7 @@ void Ping_Init(void){
 // TODO! Decouple PulseCount into a parameter
 
 void Ping_pulse(void){
-	static unsigned long PulseCount=0;
+	static unsigned long PulseCount=0; // TODO!! decouple this
 	unsigned char delay_count;
 	unsigned char mask = 0x01 << PulseCount;
 	

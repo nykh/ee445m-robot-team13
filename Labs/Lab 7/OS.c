@@ -1,12 +1,12 @@
 #include "os.h"
+#include "osasm.h"
 #include "semaphore.h"
-#include "heap2.h"
+#include "heap.h"
 #include "FIFO.h"
 
 #include "inc/hw_types.h"
 #include "driverlib/sysctl.h"
 #include "inc/tm4c123gh6pm.h"
-#include "osasm.h"
 
 #include "io.h"
 
@@ -187,16 +187,19 @@ static void SetInitialStack(TCB * tcb, unsigned long stacksize ){
 // output: none
 void OS_Init(void) {  volatile unsigned long delay;
   OS_DisableInterrupts();   // set processor clock to 50 MHz
-//  SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL |
-//                 SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
+
   NVIC_ST_CTRL_R = 0;         // disable SysTick during setup
   NVIC_ST_CURRENT_R = 0;      // any write to current clears it
   NVIC_SYS_PRI3_R =(NVIC_SYS_PRI3_R&0x00FFFFFF)|0xC0000000; // SysTick priority 6
   NVIC_SYS_PRI3_R =(NVIC_SYS_PRI3_R&0xFF00FFFF)|0x00E00000; // PendSV priority 7
 	
 	//Activate Timer1 for periodic interrupt for Waking up Threads
+	
+	/************************** New Style *****************************/
   SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R1;  // 0) activate timer1
 	delay = SYSCTL_RCGCTIMER_R;
+	/******************************************************************/
+	
   TIMER1_CTL_R &= ~TIMER_CTL_TAEN;        // 1) disable timer1A during setup
   TIMER1_CFG_R = TIMER_CFG_32_BIT_TIMER;  // 2) configure for 16-bit timer mode
   TIMER1_TAMR_R = TIMER_TAMR_TAMR_PERIOD;     // 3) configure for periodic mode, default down-count settings
@@ -208,16 +211,24 @@ void OS_Init(void) {  volatile unsigned long delay;
   TIMER1_CTL_R |= TIMER_CTL_TAEN;      // 10) enable 
 
 	//Activate Timer2 for system timer
+	
+	/************************** New Style *****************************/
   SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R2;  // 0) activate timer2
   delay = SYSCTL_RCGCTIMER_R;             // user function (this line also allows time to finish activating)
-  TIMER2_CTL_R &= ~TIMER_CTL_TAEN;        // 1) disable timer2A during setup
+	/******************************************************************/
+  
+	TIMER2_CTL_R &= ~TIMER_CTL_TAEN;        // 1) disable timer2A during setup
   TIMER2_CFG_R = TIMER_CFG_32_BIT_TIMER;  // 2) configure for 16-bit timer mode
   TIMER2_TAMR_R = TIMER_TAMR_TAMR_PERIOD;     // 3) configure for periodic mode, default down-count settings
   TIMER2_TAILR_R = 0xFFFFFFFF;       // 4) reload value
 	TIMER2_CTL_R = TIMER_CTL_TAEN;
 
 	//Activate PF0 Edge Triggered Interrupt
+	
+	/************************** New Style *****************************/
 	SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R5;
+	delay = SYSCTL_RCGCGPIO_R;
+	/******************************************************************/
 	
 	GPIO_PORTF_LOCK_R = GPIO_LOCK_KEY; // Unlock to access CR
 	GPIO_PORTF_CR_R |= (SW1|SW2);      // enable commit for PF4 and PF0

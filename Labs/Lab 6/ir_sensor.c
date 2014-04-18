@@ -108,7 +108,7 @@ static unsigned short Filter(FilterType *f, unsigned short data) {
 char Filter_Use = NOT_USING;
 	
 static void Consumer(void) {	
-  ADC_Collect(0, SAMPLING_RATE, IR1CallBack, 64);
+  ADC_Collect(3, SAMPLING_RATE, IR1CallBack, 64);
 
 #if LAB_DEMO == 7
   ADC_Collect(1, SAMPLING_RATE, IR2CallBack, 64);

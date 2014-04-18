@@ -29,7 +29,7 @@
 
 #define PERIOD       25000
 
-#define MOTOR_DIFF   100
+#define MOTOR_DIFF   0
 
 // period is 16-bit number of PWM clock cycles in one period (3<=period)
 // duty is number of PWM clock cycles output is high  (2<=duty<=period-1)

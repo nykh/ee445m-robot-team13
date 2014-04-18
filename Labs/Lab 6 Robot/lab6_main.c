@@ -27,7 +27,9 @@ void NetworkReceive(void) {
 	unsigned char canData[4];
 	Debug_LED_Init();
 	CAN0_Open();
-	Motor_Init(22500);
+	Motor_Init(5000);
+	Motor_0_MotionUpdate(3000, 1);
+	Motor_1_MotionUpdate(3000, 1);
 	ST7735_Message(0,4,"Test", 0);
 	while (1) {
 		CAN0_GetMail(&receiveID, canData);
@@ -37,8 +39,7 @@ void NetworkReceive(void) {
 			case IRSensor0:
 				ST7735_Message(0,0,"IR0: ", ((unsigned short *)canData)[0]);
 			if (((unsigned short *)canData)[0] > 1000) {
-				Motor_0_MotionUpdate(0, 0);
-				Motor_1_MotionUpdate(0, 0);
+				Motor_MotionUpdate(0, 0);
 			}
 			break;
 			case UltraSonic:

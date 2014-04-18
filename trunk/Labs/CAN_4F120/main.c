@@ -78,6 +78,7 @@ int main(void){ volatile unsigned long delay;
   CAN0_Open();
   Timer3_Init(&UserTask, 1600000); // initialize timer3 (10 Hz)
   EnableInterrupts();
+	
 
   while(1){
     if(CAN0_GetMailNonBlock(RcvData)){

@@ -28,7 +28,7 @@
 
 #ifndef __CAN0_H__
 #define __CAN0_H__
-#define CAN_BITRATE             1000000
+#define CAN_BITRATE             500000
 
 // reverse these IDs on the other microcontroller
 #define RCV_ID 4

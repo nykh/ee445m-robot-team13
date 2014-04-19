@@ -21,6 +21,10 @@ unsigned int NumCreated;
 /********************** Public functions *******************/
 
 #if MAIN
+static long CurrentSpeed0 = 0;
+static long CurrentSpeed1 = 0;
+static long RefSpeed0 = 0;
+static long RefSpeed1 = 0;
 
 void NetworkReceive(void) {
 	PackageID receiveID;
@@ -28,19 +32,26 @@ void NetworkReceive(void) {
 	Debug_LED_Init();
 	CAN0_Open();
 	Motor_Init(5000);
-	Motor_0_MotionUpdate(3000, 1);
-	Motor_1_MotionUpdate(3000, 1);
+	Motor_0_MotionUpdate(0, 1);
+	Motor_1_MotionUpdate(0, 1);
+	RefSpeed0 = RefSpeed1 = 3000;
 	ST7735_Message(0,4,"Test", 0);
 	while (1) {
-		CAN0_GetMail(&receiveID, canData);
-		
-		
+		CAN0_GetMail(&receiveID, canData);	
 		switch(receiveID) {
+			unsigned short sensor1;
 			case IRSensor0:
-				ST7735_Message(0,0,"IR0: ", ((unsigned short *)canData)[0]);
-			if (((unsigned short *)canData)[0] > 1000) {
-				Motor_MotionUpdate(0, 0);
-			}
+				sensor1 = ((unsigned short *)canData)[0];
+				ST7735_Message(0,0,"IR0: ", sensor1);
+				if (sensor1 > 1000) {
+					RefSpeed0 = 12000 - (sensor1-1000)*30;
+					if (RefSpeed0 & 0x80000000) {
+						RefSpeed0 = 0;
+					}
+					RefSpeed1 = 12000;
+				}else {
+					RefSpeed0 = RefSpeed1 = 12000;
+				}
 			break;
 			case UltraSonic:
 				ST7735_Message(0,1,"ULS0: ", ((unsigned long *)canData)[0]);
@@ -49,6 +60,30 @@ void NetworkReceive(void) {
 			break;
 		}
 	}
+}
+
+#define INC_STEP  300
+static long IncrementalController( long ref,  long curr) {
+	if (curr > ref ) {
+		if (curr > ref + INC_STEP ) {
+		  return (curr-INC_STEP);
+		} else {
+			return ref;
+		}
+	} else {
+		if (curr < ref - INC_STEP) {
+			return (curr+INC_STEP);
+		} else {
+			return ref;
+		}
+	}
+}
+
+void Controller(void) {
+	CurrentSpeed0 = IncrementalController(RefSpeed0, CurrentSpeed0);
+	CurrentSpeed1 = IncrementalController(RefSpeed1, CurrentSpeed1);
+	Motor_0_MotionUpdate(CurrentSpeed0, 1);
+	Motor_1_MotionUpdate(CurrentSpeed1, 1);
 }
 
 int main(void) {
@@ -65,6 +100,7 @@ int main(void) {
   NumCreated = 0;
   //NumCreated += OS_AddThread(&Interpreter,128,1); 
   NumCreated += OS_AddThread(&NetworkReceive,128,1); 
+  NumCreated += OS_AddPeriodicThread(&Controller, 100*TIME_1MS, 3); 
   
   OS_Launch(TIMESLICE);
 }

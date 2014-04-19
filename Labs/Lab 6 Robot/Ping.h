@@ -10,22 +10,11 @@
 //PB3-0 set as input to capture input from sensors
 void Ping_Init(void);
 
-//Send pulse to four Ping))) sensors
-//happens periodically by using timer
-//added in interrupt handler as foreground thread 
-//Fs: about 10Hz
-//no input and no output
-//void Ping_pulse(void);
 
-//put inside PORTB_handler
-//input system time, resolution: 12.5ns
-//no output
-//void Ping_measure(void);
+// Return: the number of times this sensor has failed
+unsigned char PingValue(unsigned long *mbox, unsigned char pingNum);
 
-//compute and update distance array for four sensors
-//check the new data and update distance info
-//runs in foreground
-//output resolution um
-//void Distance(void);
+//final distance data
+extern unsigned long Ping_Distance_Result[4];
 
-void Ping_getData(unsigned long * data) ;
+

@@ -34,13 +34,14 @@
 #define RCV_ID 4
 #define XMT_ID 2
 
+// 11 bit
 typedef enum PackageID_t {
 	IRSensor0 = 1,
 	IRSensor1 = 2,
 	IRSensor2 = 3,
 	IRSensor3 = 4,
-	UltraSonic = 5,
 	Motors = 6,
+	PingSensor = 0x10,
 } PackageID;
 
 // Returns true if receive data is available

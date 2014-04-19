@@ -97,12 +97,10 @@ static void myADCInit(unsigned char prescale, unsigned short period);
 //------------ADC_Collect------------
 // Starts the collection of multiple ADC samples at a certain frequency
 // ADC Doesn't need to be initialized
-// Input: channelNum should be between 0 and 11
-//				fs is the sampling frequency
-//				buffer is the array that will hold the results
-//				User has to make sure that numberOfSamples is within the capacity of buffer
+// Input: fs is the sampling frequency in units of Hz
+//				task is a call back function that gets passed the value of result
 // Output: None
-void myADC_Collect4(unsigned int fs, void  (*task) (unsigned short *), unsigned int numberOfSamples){
+void myADC_Collect4(unsigned int fs, void  (*task) (unsigned short *)){
 	long sr;
 	
 	// calculate period and presclae based on fs
@@ -113,10 +111,10 @@ void myADC_Collect4(unsigned int fs, void  (*task) (unsigned short *), unsigned 
 	// raised semaphore
 	ADCTask = task;
 
-    sr = StartCritical();
+  sr = StartCritical();
 	//Call ADC Init to initialize the timer and ADC
 	myADCInit(prescale, period);
-    EndCritical(sr);
+  EndCritical(sr);
 }
 
 #if 0 // Deprecated

@@ -5,146 +5,164 @@
 // Miao Qi
 // October 27, 2012
 
+// Modified
+// Nicholas Huang
+// 2014/4/19
+// Use semaphore to synchronize interface
+// Four sensors are sampled in turn (every 25 ms)
+
 #include "inc/tm4c123gh6pm.h"
 #include "OS.h"
+#include "semaphore.h"
 
-#define PB4 						(*((volatile unsigned long *)0x40005040))
-#define PB3_0 					(*((volatile unsigned long *)0x4000503C))
+#define Sensors 			    (*((volatile unsigned long *)0x4000503C))
+#define PB3_0             0x03
 #define Temperature				20 
 #define NVIC_EN0_INT1			2
 
-#define TIME_1MS 80000
+#define TimeGap           5 // in 10 ms
 
-unsigned long Ping_Lasttime[4];
-unsigned long Ping_Finishtime[4];
-unsigned char Ping_Update;
-unsigned long Ping_Distance_Result[4];
-unsigned long Ping_Distance_Filter[4][4];
-//unsigned long Ping_Distance_cal[10];
-unsigned long Ping_Index[4];
-unsigned long Ping_laststatus;
+Sema4Type	Sema4PingResultAvailable[4], Sema4PingIdle;
+long StartCritical (void);    // previous I bit, disable interrupts
+void EndCritical(long sr);    // restore I bit to previous value
 
-void Ping_pulse(void);
+unsigned char PingNum=0;
+
+static unsigned long LastStatus;
+static unsigned long Starttime[4];
+static unsigned long Finishtime[4];
+static unsigned char Edge_Valid[4] = {0,}; // flag
+
+static unsigned long Distance_Result[4];
+static unsigned char Sensor_fail[4] = {0,};
+
+static void Ping_measure(unsigned char number);
+
+void Ping_Thread(void) {
+	while(1) {
+		Ping_measure(0);
+		Ping_measure(1);
+//		Ping_measure(2);
+//		Ping_measure(3);
+	}
+}
 
 //initialize PB4-0
 //PB4 set as output to send 5us pulse to all four Ping))) sensors at same time
 //PB3-0 set as input to capture input from sensors
 void Ping_Init(void){
-                                // (a) activate clock for port F
-  SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOB;
-  Ping_laststatus = 0;             // (b) initialize status
-  GPIO_PORTB_DIR_R &= ~0x0F;    // (c) make PB3-0 in
-  GPIO_PORTB_DIR_R |=  0x10;    // (c) make PB4 out
-  GPIO_PORTB_AFSEL_R &= ~0x1F;  //     disable alt funct on PB4-0
-  GPIO_PORTB_DEN_R |= 0x1F;     //     enable digital I/O on PB4-0   
+  /***************** New Style *********************/
+  SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R1;
+  /*************************************************/
+  
+  LastStatus = 0;           // (b) initialize status
+  
+  GPIO_PORTB_DIR_R &= ~PB3_0;    // (c) make PB3-0 in
+  GPIO_PORTB_AFSEL_R &= ~PB3_0;  //     disable alt funct on PB4-0
+  GPIO_PORTB_DEN_R |= PB3_0;     //     enable digital I/O on PB4-0   
   GPIO_PORTB_PCTL_R &= ~0x000FFFFF; // configure PB4-0 as GPIO
-  GPIO_PORTB_AMSEL_R = 0;       //     disable analog functionality on PB
-  GPIO_PORTB_PDR_R |= 0x1F;     //     enable pull-down on PF4-0
-  GPIO_PORTB_IS_R &= ~0x0F;     // (d) PB3-0 is edge-sensitive
-  GPIO_PORTB_IBE_R |= 0x0F;    //      PB3-0 is both edges
-  GPIO_PORTB_ICR_R =  0x0F;      // (e) clear flag3-0
-  GPIO_PORTB_IM_R |= 0x0F;      // (f) arm interrupt on PB3-0
+  GPIO_PORTB_AMSEL_R =~PB3_0;    //     disable analog functionality on PB
+  GPIO_PORTB_PDR_R |= PB3_0;     //     enable pull-down on PF4-0
+  
+  GPIO_PORTB_IS_R &= ~PB3_0;     // (d) PB3-0 is edge-sensitive
+  GPIO_PORTB_IBE_R |= PB3_0;     //      PB3-0 is both edges
+  GPIO_PORTB_ICR_R =  PB3_0;     // (e) clear flag3-0
+  GPIO_PORTB_IM_R |= PB3_0;      // (f) arm interrupt on PB3-0
+  
   NVIC_PRI0_R = (NVIC_PRI0_R&0xFFFF00FF)|0x00004000; // (g) priority 2
   NVIC_EN0_R |= NVIC_EN0_INT1;  // (h) enable interrupt 1 in NVIC
-	OS_AddPeriodicThread(&Ping_pulse, 100*TIME_1MS, 3);
+	
+  Edge_Valid[0] = Edge_Valid[1] = Edge_Valid[2] = Edge_Valid[3] = 0;
+	
+	OS_InitSemaphore(&Sema4PingIdle, 1);
+	
+  OS_InitSemaphore(&Sema4PingResultAvailable[0], 0);
+  OS_InitSemaphore(&Sema4PingResultAvailable[1], 0);
+  OS_InitSemaphore(&Sema4PingResultAvailable[2], 0);
+  OS_InitSemaphore(&Sema4PingResultAvailable[3], 0);
+	
+  OS_AddThread(Ping_Thread, 128, 1);
 }
 
-extern unsigned char SendPulse;
-extern unsigned long PulseCount;
+unsigned char PingValue(unsigned long *mbox, unsigned char pingNum) {
+	OS_bWait(&Sema4PingResultAvailable[pingNum]);
+	
+	*mbox = Distance_Result[pingNum];
+	
+	return Sensor_fail[pingNum];
+}
+
 //Send pulse to four Ping))) sensors
 //happens periodically by using timer
 //foreground thread 
-//Fs: about 10Hz
+//Fs: about 40Hz
 //no input and no output
 
-void Ping_pulse(void){
-unsigned char delay_count;
-	GPIO_PORTB_DEN_R |= 0x10;
-	GPIO_PORTB_DEN_R &= ~0x0F;
-	PB4 = 0x10;
-	//blind-wait
-	for(delay_count=0; delay_count<60; ){delay_count++;}
-	PB4 = 0x00;
-	GPIO_PORTB_DEN_R &= ~0x10;
-	GPIO_PORTB_DEN_R |=  0x0F;
-}
+// TODO! Decouple PingNum into a parameter
 
-unsigned long median(unsigned long *data_record){
-unsigned long buffer[4];
-//compare the oldest two data
-if((*data_record)<*(data_record+1))
-	{buffer[0]=*data_record; buffer[1]=*(data_record+1);}		
-else
-	{buffer[1]=*data_record; buffer[0]=*(data_record+1);}
-//compare the third data
-if(buffer[0]<*(data_record+2)){
-	if(buffer[1]<*(data_record+2)){buffer[2]=*(data_record+2);}
-	else{buffer[2]=buffer[1]; buffer[1]=*(data_record+2);}
-	}
-else{buffer[2]=buffer[1]; buffer[1]=buffer[0];buffer[0]=*(data_record+2);}
-//compare the forth data
-//ingore the forth data when it is the laragest
-if(buffer[2]>*(data_record+3)){
-		//ingore the forth data when it is the smallest
-		if(buffer[0]>*(data_record+3)){buffer[2]=buffer[1];buffer[1]=buffer[0];}}
-		else{buffer[2]=*(data_record+3);}
-return (buffer[1]+buffer[2])>>1;
-}
+// Must ensure 
+
+static void Ping_measure(unsigned char number){
+	long sr;
+	unsigned char delay_count;
+	static unsigned char bitmask;
+	unsigned long tin;
 	
-
-
-//d=c* tIN/2
-//d = c * tIN * 12.5ns /2 * (um/us)
-//d = c * tIN * (1us/40) /(2*2) * (um/us)
-//d = c * tIN / (40*2*2) * um
-//ignore underflow
-//+0.5: round
-//return distance = ((tin/40)*(331+0.6*Temperature+0.5))/4;
-//compute and update distance array for four sensors
-//called when PORTB3-0 capture a value change
-//output resolution um
-void Distance(void){
-unsigned char bits_I = 0;
-unsigned long tin;
-for (bits_I=0; bits_I<4;bits_I++)
-	if(Ping_Update&(1<<bits_I)) {
-		tin = OS_TimeDifference(Ping_Finishtime[bits_I],Ping_Lasttime[bits_I]);
-		tin = ((tin/40)*(331+0.6*Temperature+0.5))/4;
-		Ping_Distance_Filter[bits_I][Ping_Index[bits_I]&0x3] = tin;
-		Ping_Index[bits_I]++;
-		Ping_Distance_Result[bits_I] = median(&Ping_Distance_Filter[bits_I][0]);
-	//	Ping_Distance_Result[bits_I] = tin//80000;
-		Ping_Update &= ~(1<<bits_I);
+	OS_bWait(&Sema4PingIdle);
+	
+	PingNum = number & 0x03;
+	bitmask = 1 << PingNum;
+	Edge_Valid[PingNum] = 0;
+	
+	// Send pulse
+	GPIO_PORTB_IM_R &= ~bitmask;
+	GPIO_PORTB_DIR_R |= bitmask;
+	
+	Sensors |= bitmask;
+	//blind-wait
+	for(delay_count=0; delay_count<100; delay_count++);
+	Sensors &= ~bitmask;
+	
+	GPIO_PORTB_DIR_R &= ~bitmask;
+	GPIO_PORTB_IM_R |= bitmask;
+	
+	OS_Sleep(TimeGap);
+	
+	sr = StartCritical();
+	// Wait for response
+	if(Edge_Valid[PingNum]) {
+		tin = OS_TimeDifference(Finishtime[PingNum],Starttime[PingNum]);
+		Distance_Result[PingNum] = (tin*(3310+6*Temperature+5))/16000000; // um
+		Sensor_fail[PingNum] = 0;
+	} else {
+		Sensor_fail[PingNum] = 1;
 	}
+	EndCritical(sr);
+	
+	OS_bSignal(&Sema4PingResultAvailable[PingNum]);
+	OS_bSignal(&Sema4PingIdle);
 }
-
 
 //put inside PORTB_handler
 //input system time, resolution: 12.5ns
 //no output
-void GPIOPortB_Handler(void){
-//void Ping_measure(void){
-	unsigned char bits_I = 0;
-	unsigned long Ping_status;
-	Ping_status	= PB3_0;
-	//check rising edge and record time
-	for (bits_I=0; bits_I<4;bits_I++) {
-		Ping_Lasttime[bits_I] = ((Ping_status&(1<<bits_I)) && !(Ping_laststatus&(1<<bits_I)))? OS_Time():Ping_Lasttime[bits_I]; 
-		GPIO_PORTB_ICR_R = 1<<bits_I;
-	}
-	//check falling edge and compute distance
-	for (bits_I=0; bits_I<4;bits_I++) {
-		Ping_Finishtime[bits_I] = (!(Ping_status&(1<<bits_I)) && (Ping_laststatus&(1<<bits_I)))? OS_Time():Ping_Finishtime[bits_I]; 
-		GPIO_PORTB_ICR_R = 1<<bits_I;
-		Ping_Update |= 1<<bits_I;
-	}
-	Ping_laststatus = Ping_status;
-}
 
-void Ping_getData(unsigned long * data) {
-	int i;
-	Distance();
-	for (i=0;i<4;i++) {
-		data[i] = Ping_Distance_Result[i];
+void GPIOPortB_Handler(void){
+	unsigned long CurrStatus = Sensors;
+	
+	//check rising edge and record time	
+	if(CurrStatus & ~LastStatus) {
+		Starttime[PingNum] = OS_Time();
 	}
+	
+	//check falling edge and record time
+	else if(~CurrStatus & LastStatus) {
+		Finishtime[PingNum] = OS_Time();
+		
+		Edge_Valid[PingNum] = 1;
+	}
+
+	GPIO_PORTB_ICR_R = PB3_0;
+	
+	LastStatus = CurrStatus;
 }

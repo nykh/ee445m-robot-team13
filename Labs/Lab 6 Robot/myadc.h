@@ -59,7 +59,14 @@ unsigned short ADC_In(void);
 unsigned char ADC_Status(void);
 #endif
 
+//------------ADC_Collect------------
+// Starts the collection of multiple ADC samples at a certain frequency
+// ADC Doesn't need to be initialized
+// Input: fs is the sampling frequency in units of Hz
+//				task is a call back function that gets passed the value of result
+// Output: None
+
 // The "task" is now responsible for storing the data, the ADC_Collect function itself no long does this
 // what's passed to "task" is now an array of 4 values
-void myADC_Collect4(unsigned int fs, void  (*task) (unsigned short *), unsigned int numberOfSamples);
+void myADC_Collect4(unsigned int fs, void  (*task) (unsigned short *));
 

@@ -1369,7 +1369,7 @@ static void longToString (char * buffer, long value);
 //				line number can be 0,1,2,3
 //				Input string is printed on lines. Pass a NULL pointer to print the integer value
 // Output: none
-void ST7735_Message (int device, int line, char *string, long value){
+void ST7735_Message (int device, int line, const char *string, long value){
 	short int y = device * 80 + line * 10;
 	short x=0;
 	int i;

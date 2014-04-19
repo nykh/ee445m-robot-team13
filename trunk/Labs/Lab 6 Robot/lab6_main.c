@@ -14,7 +14,7 @@
 #define SAMPLING_RATE 2000
 #define TIMESLICE 2*TIME_1MS  // thread switch time in system time units
 
-#define MAIN 1		//1 = receiver, 0 = transmitter
+#define MAIN 0		//1 = receiver, 0 = transmitter
 /************************ Debug info ***********************/
 unsigned int NumCreated;
 
@@ -38,9 +38,13 @@ void NetworkReceive(void) {
 	ST7735_Message(0,4,"Test", 0);
 	while (1) {
 		CAN0_GetMail(&receiveID, canData);	
+<<<<<<< .mine
+		if (receiveID == IRSensor0) {
+=======
 		switch(receiveID) {
 			unsigned short sensor1;
 			case IRSensor0:
+>>>>>>> .r110
 				sensor1 = ((unsigned short *)canData)[0];
 				ST7735_Message(0,0,"IR0: ", sensor1);
 				if (sensor1 > 1000) {
@@ -52,12 +56,11 @@ void NetworkReceive(void) {
 				}else {
 					RefSpeed0 = RefSpeed1 = 12000;
 				}
-			break;
-			case UltraSonic:
-				ST7735_Message(0,1,"ULS0: ", ((unsigned long *)canData)[0]);
-			break;
-			default:
-			break;
+		} else if(receiveID | PingSensor) {
+				unsigned char pingNum = receiveID & 0x03;
+				const char *label[4] = {"Ping0: ", "Ping1: ", "Ping2: ", "Ping3: "};
+				
+				ST7735_Message(0,pingNum + 1, label[pingNum], ((unsigned long *)canData)[0]);
 		}
 	}
 }
@@ -107,34 +110,85 @@ int main(void) {
 
 #else 
 
-void IRSensorSend(void) {	
-	unsigned short IRvalues[4];
-	unsigned long sonarValues[4];
+unsigned short IRvalues[4];
+unsigned long pingValue[4];
+static unsigned char pingNum = 0;
+
+void NetworkSend(void) {
 	unsigned char CanData[4];
 	
+	CAN0_Open();
+	
+	while(1) {
+		OS_bWait(&Sema4CAN);
+		((unsigned short*)CanData)[0] = IRvalues[0];
+		CAN0_SendData(IRSensor0, CanData);
+
+		((unsigned long*)CanData)[0] = pingValue[0];	
+		CAN0_SendData(PingSensor+0, CanData);
+		((unsigned long*)CanData)[0] = pingValue[1];	
+		CAN0_SendData(PingSensor+1, CanData);
+		((unsigned long*)CanData)[0] = pingValue[2];	
+		CAN0_SendData(PingSensor+2, CanData);
+		((unsigned long*)CanData)[0] = pingValue[3];	
+		CAN0_SendData(PingSensor+3, CanData);
+		OS_bSignal(&Sema4CAN);
+		
+	}
+}
+
+void IRSensorSend(void) {	
+//	unsigned char CanData[4];
+	
+	// may Block
 	IR_getValues(IRvalues);
 	
-	((unsigned short*)CanData)[0] = IRvalues[3];
+	// perform distance conversion
 	
-	CAN0_SendData(IRSensor0, CanData);
-	
-//	Ping_getData (sonarValues);
-//	((unsigned long*)CanData)[0] = sonarValues[0];
-//	CAN0_SendData(UltraSonic, CanData);
+//		OS_bWait(&Sema4CAN);
+//		((unsigned short*)CanData)[0] = IRvalues[0];
+//		CAN0_SendData(IRSensor0, CanData);
+//	  OS_bSignal(&Sema4CAN);
 }
+
+void PingSensorSend(void) {
+//	unsigned char CanData[4];
+		
+	Ping_Init();
+	
+	while(1) {
+		// may block
+		PingValue(&pingValue[pingNum], pingNum);
+		pingNum = (pingNum + 1) & 0x01;
+		
+//		OS_bWait(&Sema4CAN);
+//		((unsigned long*)CanData)[0] = pingValue[pingNum];	
+//		CAN0_SendData(PingSensor | pingNum, CanData);
+//	  OS_bSignal(&Sema4CAN);
+	}
+}
+
 
 int main(void) {
   PLL_Init();
   
   OS_Init();
-	IR_Init();
+	
+	
+	OS_InitSemaphore(&Sema4CAN, 1);
 	
 	Debug_LED_Init();
 	
   NumCreated = 0;
-  //NumCreated += OS_AddThread(&Interpreter,128,1); 
-  NumCreated += OS_AddPeriodicThread(&IRSensorSend, 100*TIME_1MS, 3); 
-  CAN0_Open();
+  //NumCreated += OS_AddThread(&Interpreter,128,1);
+	IR_Init();
+	NumCreated += OS_AddPeriodicThread(&IRSensorSend, 1000*TIME_1MS, 3); 
+	NumCreated += OS_AddThread(&PingSensorSend, 128, 3);
+	
+	NumCreated += OS_AddThread(&NetworkSend, 128, 4);  // somehow this must be a lower priority than the other threads
+  
+	
+	
 //	Ping_Init();
   OS_Launch(TIMESLICE);
 }

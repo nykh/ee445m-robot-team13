@@ -13,7 +13,7 @@
 
 #include "gpio_debug.h"
 
-#define SAMPLING_RATE 2000
+#define SAMPLING_RATE         2000 // in unit of Hz
 #define TIMESLICE 2*TIME_1MS  // thread switch time in system time units
 
 Sema4Type	Sema4IRDataAvailable;
@@ -37,7 +37,7 @@ void  IRCallBack(unsigned short buf[]) {
 void IR_Init(void) {
   OS_InitSemaphore(&Sema4IRDataAvailable, 0);
 	
-  myADC_Collect4(SAMPLING_RATE, IRCallBack, 64);
+  myADC_Collect4(SAMPLING_RATE, IRCallBack);
 }
 
 void IR_getValues (unsigned short *buffer) {

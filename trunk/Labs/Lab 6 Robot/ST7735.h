@@ -169,6 +169,6 @@ void ST7735_PlotReset(void);
 
 //User Added prototypes
 
-void ST7735_Message (int device, int line, char *string, long value);
+void ST7735_Message (int device, int line, const char *string, long value);
 
 #endif

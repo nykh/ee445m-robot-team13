@@ -72,21 +72,30 @@ void Motor_Init(unsigned short duty){   volatile unsigned long delay;
 
 // change duty cycle
 // duty is number of PWM clock cycles output is high  (2<=duty<=period-1)
-
+//R
 // Motor 0 uses
 // PB7 as direction pin
 // PB6 as PWM
 void Motor_0_MotionUpdate(unsigned long duty, unsigned char direction){
+	long value ;
+	if (duty<2) duty = 2;
+	if (duty>PERIOD-2) duty = PERIOD -2;
+	
 	PB7 = (direction != 0)<<7;          // PB4 controls the direction of one wheel
-	PWM0_0_CMPA_R = (direction)? (duty - 1) : (PERIOD - duty - 1);           // 6) count value when output rises
+	value = (direction)?(PERIOD - duty):(duty);           // 6) count value when output rises
+	PWM0_0_CMPA_R = value;
 }
-
+//L
 // Motor 1 uses
 // PB5 as direction pin
 // PB4 as PWM
 void Motor_1_MotionUpdate(unsigned long duty, unsigned char direction){
+	long value;
+	if (duty<2) duty = 2;
+	if (duty>PERIOD-2) duty = PERIOD -2;
 	PB5 = (direction != 0)<<5;          // PB4 controls the direction of one wheel
-	PWM0_1_CMPA_R = (direction)? (duty - 1) : (PERIOD - duty - 1);           // 6) count value when output rises
+	value = (direction)?(PERIOD - duty):(duty);           // 6) count value when output rises
+	PWM0_1_CMPA_R = value;
 }
 
 void Motor_MotionUpdate(unsigned long duty, unsigned char direction){	

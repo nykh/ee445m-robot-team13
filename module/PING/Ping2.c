@@ -13,13 +13,12 @@
 #define Temperature				20 
 #define NVIC_EN0_INT1			2
 
-unsigned char PingNum=0;
-
-static unsigned long LastStatus;
-static unsigned long Starttime[4];
-static unsigned long Finishtime[4];
-static unsigned char Update_vect
-static unsigned long Distance_Result[4];
+static unsigned long Ping_Lasttime[4];
+static unsigned long Ping_Finishtime[4];
+static unsigned char Ping_Update;
+static unsigned long Ping_Distance_Result[4];
+static unsigned long Ping_Distance_Filter[4][4];
+static unsigned long Ping_Index[4];
 
 //initialize PB4-0
 //PB4 set as output to send 5us pulse to all four Ping))) sensors at same time
@@ -29,7 +28,7 @@ void Ping_Init(void){
   SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R1;
   /*************************************************/
   
-  LastStatus = 0;           // (b) initialize status
+  Ping_laststatus = 0;              // (b) initialize status
   
   GPIO_PORTB_DIR_R &= ~PB0_3;    // (c) make PB3-0 in
   GPIO_PORTB_AFSEL_R &= ~PB0_3;  //     disable alt funct on PB4-0
@@ -53,32 +52,28 @@ void Ping_Init(void){
 //Fs: about 40Hz
 //no input and no output
 
-// TODO! Decouple PingNum into a parameter
+// TODO! Decouple PulseCount into a parameter
 
-// Must ensure 
-
-void Ping_pulse(unsigned char number){
+void Ping_pulse(void){
+	static unsigned long PulseCount=0;
 	unsigned char delay_count;
-	static unsigned char bitmask;
+	static unsigned char mask = 0x01 << PulseCount;
 	
-	PingNum = number & 0x03;
-	bitmask = 1 << PingNum;
+	GPIO_PORTB_IM_R &= ~mask;
+	GPIO_PORTB_DIR_R |= mask;
 	
-	GPIO_PORTB_IM_R &= ~bitmask;
-	GPIO_PORTB_DIR_R |= bitmask;
-	
-	Sensors |= bitmask;
+	Sensors |= mask;
 	//blind-wait
-	for(delay_count=0; delay_count<60; delay_count++);
-	Sensors &= ~bitmask;
+	for(delay_count=0; delay_count<60; ){delay_count++;}
+	Sensors &= ~mask;
 	
-	GPIO_PORTB_DIR_R &= ~bitmask;
-	GPIO_PORTB_IM_R |= bitmask;
+	GPIO_PORTB_DIR_R &= ~mask;
+	GPIO_PORTB_IM_R |= mask;
 
-	
+	PulseCount = (PulseCount + 1) % 4;
 }
 
-/* // Input: data_record is one roww out of a 4 by 4 buffer
+// Input: data_record is one roww out of a 4 by 4 buffer
 static unsigned long median(unsigned long *data_record){
 	unsigned long buffer[4];
 	//compare the oldest two data
@@ -101,7 +96,7 @@ static unsigned long median(unsigned long *data_record){
 	}
 	
 	return (buffer[1]+buffer[2])/2;
-} */
+}
 	
 
 
@@ -118,15 +113,19 @@ static unsigned long median(unsigned long *data_record){
 void Distance(void){
 	unsigned char i;
 	unsigned char mask;
-	if(!Update_vect) return;
-	
 	for (i=0, mask = 0x01; i<4; i++, mask <<= 1) {
-		if(Update_vect & mask) {
-			unsigned long tin = OS_TimeDifference(Finishtime[i],Starttime[i]);
-		
-			Distance_Result[i] = (tin*(3310+6*Temperature+5))/1600;
+		if(Ping_Update & mask) {
+			unsigned long tin = OS_TimeDifference(Ping_Finishtime[i],Ping_Lasttime[i]);
 			
-			Update_vect &=~mask;
+			/**************** tuned *******************/
+			tin = (tin*(3310+6*Temperature+5))/1600;
+			
+			Ping_Distance_Filter[i][Ping_Index[i]] = tin;
+			Ping_Index[i] = (Ping_Index[i] + 1) % 0x03;
+			
+			Ping_Distance_Result[i] = median(&Ping_Distance_Filter[i][0]);
+			
+			Ping_Update &=~mask;
 		}
 	}
 }
@@ -135,22 +134,29 @@ void Distance(void){
 //put inside PORTB_handler
 //input system time, resolution: 12.5ns
 //no output
-
+static unsigned long LastStatus;
 void GPIOPortB_Handler(void){
-	unsigned char mask = 1<<PingNum;
+	unsigned char i;
+	unsigned char mask;
 	unsigned long CurrStatus = Sensors;
+	unsigned char change;
 	
-	//check rising edge and record time	
-		if(CurrStatus & ~LastStatus) {
-			Starttime[PingNum] = OS_Time();
+	//check rising edge and record time
+	change = CurrStatus & ~LastStatus;
+	for (i=0, mask=0x01; i<4; i++, mask <<= 1) {
+		if(change & mask) {
+			Ping_Lasttime[i] = OS_Time();
 		}
+	}
 	
-	//check falling edge and record time
-		else if(~CurrStatus & LastStatus) {
-			Finishtime[PingNum] = OS_Time(); 
-			
-			Update_vect |= mask;
+	//check falling edge and compute distance
+	change = ~CurrStatus & LastStatus;
+	for (i=0, mask=0x01; i<4; i++, mask <<= 1) {
+		if(change & mask) {
+			Ping_Finishtime[i] = OS_Time(); 
+			Ping_Update |= mask;
 		}
+	}
 	
 	GPIO_PORTB_ICR_R = PB0_3;
 	

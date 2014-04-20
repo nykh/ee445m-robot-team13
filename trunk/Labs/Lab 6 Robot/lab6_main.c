@@ -38,29 +38,31 @@ void NetworkReceive(void) {
 	ST7735_Message(0,4,"Test", 0);
 	while (1) {
 		CAN0_GetMail(&receiveID, canData);	
-<<<<<<< .mine
-		if (receiveID == IRSensor0) {
-=======
-		switch(receiveID) {
-			unsigned short sensor1;
-			case IRSensor0:
->>>>>>> .r110
-				sensor1 = ((unsigned short *)canData)[0];
-				ST7735_Message(0,0,"IR0: ", sensor1);
-				if (sensor1 > 1000) {
-					RefSpeed0 = 12000 - (sensor1-1000)*30;
-					if (RefSpeed0 & 0x80000000) {
-						RefSpeed0 = 0;
-					}
-					RefSpeed1 = 12000;
-				}else {
-					RefSpeed0 = RefSpeed1 = 12000;
-				}
-		} else if(receiveID | PingSensor) {
-				unsigned char pingNum = receiveID & 0x03;
+
+		if (receiveID == IRSensor) {
+//				unsigned char sensor1 = canData[0];
+			
+				ST7735_Message(0,0,"IR0: ", canData[0]);
+				ST7735_Message(0,1,"IR1: ", canData[1]);
+				ST7735_Message(0,2,"IR2: ", canData[2]);
+				ST7735_Message(0,3,"IR3: ", canData[3]);
+				
+//				if (sensor1 > 1000) {
+//					RefSpeed0 = 12000 - (sensor1-1000)*30;
+//					if (RefSpeed0 & 0x80000000) {
+//						RefSpeed0 = 0;
+//					}
+//					RefSpeed1 = 12000;
+//				}else {
+//					RefSpeed0 = RefSpeed1 = 12000;
+//				}
+		} else if(receiveID == PingSensor) {
 				const char *label[4] = {"Ping0: ", "Ping1: ", "Ping2: ", "Ping3: "};
 				
-				ST7735_Message(0,pingNum + 1, label[pingNum], ((unsigned long *)canData)[0]);
+				ST7735_Message(1,0, label[0], canData[0]);
+				ST7735_Message(1,1, label[1], canData[1]);
+				ST7735_Message(1,2, label[2], canData[2]);
+				ST7735_Message(1,3, label[3], canData[3]);
 		}
 	}
 }
@@ -110,9 +112,8 @@ int main(void) {
 
 #else 
 
-unsigned short IRvalues[4];
-unsigned long pingValue[4];
-static unsigned char pingNum = 0;
+unsigned char IRvalues[4];
+unsigned char pingValue[4];
 
 void NetworkSend(void) {
 	unsigned char CanData[4];
@@ -121,17 +122,19 @@ void NetworkSend(void) {
 	
 	while(1) {
 		OS_bWait(&Sema4CAN);
-		((unsigned short*)CanData)[0] = IRvalues[0];
-		CAN0_SendData(IRSensor0, CanData);
+		
+		CanData[0] = IRvalues[0];
+		CanData[1] = IRvalues[1];
+		CanData[2] = IRvalues[2];
+		CanData[3] = IRvalues[3];
+		CAN0_SendData(IRSensor, CanData);
 
-		((unsigned long*)CanData)[0] = pingValue[0];	
-		CAN0_SendData(PingSensor+0, CanData);
-		((unsigned long*)CanData)[0] = pingValue[1];	
-		CAN0_SendData(PingSensor+1, CanData);
-		((unsigned long*)CanData)[0] = pingValue[2];	
-		CAN0_SendData(PingSensor+2, CanData);
-		((unsigned long*)CanData)[0] = pingValue[3];	
-		CAN0_SendData(PingSensor+3, CanData);
+		CanData[0] = pingValue[0];
+		CanData[1] = pingValue[1];
+		CanData[2] = pingValue[2];
+		CanData[3] = pingValue[3];
+		CAN0_SendData(PingSensor, CanData);
+		
 		OS_bSignal(&Sema4CAN);
 		
 	}
@@ -151,21 +154,25 @@ void IRSensorSend(void) {
 //	  OS_bSignal(&Sema4CAN);
 }
 
+unsigned long sensor_fail[4] = {0,};
+
 void PingSensorSend(void) {
 //	unsigned char CanData[4];
-		
-	Ping_Init();
+	
+		Ping_Init();
 	
 	while(1) {
 		// may block
-		PingValue(&pingValue[pingNum], pingNum);
-		pingNum = (pingNum + 1) & 0x01;
-		
+		if(PingValue(&pingValue[0], 0)) sensor_fail[0]+=1;
+		if(PingValue(&pingValue[1], 1)) sensor_fail[1]+=1;
+		if(PingValue(&pingValue[2], 2)) sensor_fail[2]+=1;
+		if(PingValue(&pingValue[3], 3)) sensor_fail[3]+=1;
+	}
+	
 //		OS_bWait(&Sema4CAN);
 //		((unsigned long*)CanData)[0] = pingValue[pingNum];	
 //		CAN0_SendData(PingSensor | pingNum, CanData);
 //	  OS_bSignal(&Sema4CAN);
-	}
 }
 
 
@@ -181,7 +188,7 @@ int main(void) {
 	
   NumCreated = 0;
   //NumCreated += OS_AddThread(&Interpreter,128,1);
-	IR_Init();
+	IR_Init(); 
 	NumCreated += OS_AddPeriodicThread(&IRSensorSend, 1000*TIME_1MS, 3); 
 	NumCreated += OS_AddThread(&PingSensorSend, 128, 3);
 	

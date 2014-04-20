@@ -125,7 +125,7 @@ void CAN0_Open(void){unsigned long volatile delay;
 // Set up filter to receive these IDs
 // in this case there is just one type, but you could accept multiple ID types
   //CAN0_Setup_Message_Object(RCV_ID, MSG_OBJ_RX_INT_ENABLE, 4, NULL, RCV_ID, MSG_OBJ_TYPE_RX);
-  CAN0_Setup_Message_Object((unsigned long) (IRSensor0), MSG_OBJ_RX_INT_ENABLE, 4, NULL, (unsigned long) (IRSensor0), MSG_OBJ_TYPE_RX);
+  CAN0_Setup_Message_Object((unsigned long) (IRSensor), MSG_OBJ_RX_INT_ENABLE, 4, NULL, (unsigned long) (IRSensor), MSG_OBJ_TYPE_RX);
   CAN0_Setup_Message_Object((unsigned long) (PingSensor), MSG_OBJ_RX_INT_ENABLE, 4, NULL, (unsigned long) (PingSensor), MSG_OBJ_TYPE_RX);
   NVIC_EN1_R = (1 << (INT_CAN0 - 48)); //IntEnable(INT_CAN0);
   return;

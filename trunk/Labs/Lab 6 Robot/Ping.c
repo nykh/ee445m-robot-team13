@@ -16,7 +16,7 @@
 #include "semaphore.h"
 
 #define Sensors 			    (*((volatile unsigned long *)0x4000503C))
-#define PB3_0             0x03
+#define PB3_0             0x0F
 #define Temperature				20 
 #define NVIC_EN0_INT1			2
 
@@ -33,7 +33,7 @@ static unsigned long Starttime[4];
 static unsigned long Finishtime[4];
 static unsigned char Edge_Valid[4] = {0,}; // flag
 
-static unsigned long Distance_Result[4];
+static unsigned char Distance_Result[4];
 static unsigned char Sensor_fail[4] = {0,};
 
 static void Ping_measure(unsigned char number);
@@ -42,8 +42,8 @@ void Ping_Thread(void) {
 	while(1) {
 		Ping_measure(0);
 		Ping_measure(1);
-//		Ping_measure(2);
-//		Ping_measure(3);
+		Ping_measure(2);
+		Ping_measure(3);
 	}
 }
 
@@ -84,7 +84,7 @@ void Ping_Init(void){
   OS_AddThread(Ping_Thread, 128, 1);
 }
 
-unsigned char PingValue(unsigned long *mbox, unsigned char pingNum) {
+unsigned char PingValue(unsigned char *mbox, unsigned char pingNum) {
 	OS_bWait(&Sema4PingResultAvailable[pingNum]);
 	
 	*mbox = Distance_Result[pingNum];
@@ -131,8 +131,11 @@ static void Ping_measure(unsigned char number){
 	sr = StartCritical();
 	// Wait for response
 	if(Edge_Valid[PingNum]) {
+		unsigned long d;
 		tin = OS_TimeDifference(Finishtime[PingNum],Starttime[PingNum]);
-		Distance_Result[PingNum] = (tin*(3310+6*Temperature+5))/16000000; // um
+		d = ((tin*(3310+6*Temperature+5))/16000000); // cm
+		if(d > 255) d = 255;
+		Distance_Result[PingNum] = (unsigned char) d;
 		Sensor_fail[PingNum] = 0;
 	} else {
 		Sensor_fail[PingNum] = 1;

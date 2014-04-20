@@ -12,7 +12,7 @@ void Ping_Init(void);
 
 
 // Return: the number of times this sensor has failed
-unsigned char PingValue(unsigned long *mbox, unsigned char pingNum);
+unsigned char PingValue(unsigned char *mbox, unsigned char pingNum);
 
 //final distance data
 extern unsigned long Ping_Distance_Result[4];

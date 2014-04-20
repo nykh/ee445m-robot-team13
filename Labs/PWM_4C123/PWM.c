@@ -97,6 +97,7 @@ void PWM0_0_MotionUpdate(unsigned long speed, unsigned long direction){
 	else{
 		PB7 = 0;
 		PWM0_0_CMPA_R = PWM0_0_LOAD_R - speed - 1;             // 6) count value when output rises
+		PWM0_0_CMPA_R = speed - 1;             // 6) count value when output rises
 	}
 }
 
@@ -110,5 +111,6 @@ void PWM0_1_MotionUpdate(unsigned long speed, unsigned long direction){
 	else{
 		PB5 = 0;
 		PWM0_1_CMPA_R = PWM0_1_LOAD_R - speed - 1;             // 6) count value when output rises
+		PWM0_1_CMPA_R = speed - 1;             // 6) count value when output rises
 	}
 }

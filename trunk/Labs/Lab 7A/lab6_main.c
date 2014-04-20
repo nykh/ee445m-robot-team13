@@ -14,7 +14,7 @@
 #define SAMPLING_RATE 2000
 #define TIMESLICE 2*TIME_1MS  // thread switch time in system time units
 
-#define MAIN 0		//1 = receiver, 0 = transmitter
+#define MAIN 1		//1 = receiver, 0 = transmitter
 /************************ Debug info ***********************/
 unsigned int NumCreated;
 
@@ -43,14 +43,14 @@ void NetworkReceive(void) {
 			case IRSensor0:
 				sensor1 = ((unsigned short *)canData)[0];
 				ST7735_Message(0,0,"IR0: ", sensor1);
-				if (sensor1 > 1000) {
-					RefSpeed0 = 12000 - (sensor1-1000)*30;
+				if (sensor1 > 800) {
+					RefSpeed0 = 12000 - (sensor1-800)*40;
 					if (RefSpeed0 & 0x80000000) {
 						RefSpeed0 = 0;
 					}
 					RefSpeed1 = 12000;
 				}else {
-					RefSpeed0 = RefSpeed1 = 12000;
+					RefSpeed0 = RefSpeed1 = 18000;
 				}
 			break;
 			case UltraSonic:
@@ -62,7 +62,7 @@ void NetworkReceive(void) {
 	}
 }
 
-#define INC_STEP  300
+#define INC_STEP  3000
 static long IncrementalController( long ref,  long curr) {
 	if (curr > ref ) {
 		if (curr > ref + INC_STEP ) {
@@ -80,8 +80,12 @@ static long IncrementalController( long ref,  long curr) {
 }
 
 void Controller(void) {
-	CurrentSpeed0 = IncrementalController(RefSpeed0, CurrentSpeed0);
-	CurrentSpeed1 = IncrementalController(RefSpeed1, CurrentSpeed1);
+	if (CurrentSpeed1 == RefSpeed1) {
+		CurrentSpeed0 = IncrementalController(RefSpeed0, CurrentSpeed0);
+	} else {
+		CurrentSpeed1 = IncrementalController(RefSpeed1, CurrentSpeed1);
+		CurrentSpeed0 = CurrentSpeed1;
+	}
 	Motor_0_MotionUpdate(CurrentSpeed0, 1);
 	Motor_1_MotionUpdate(CurrentSpeed1, 1);
 }

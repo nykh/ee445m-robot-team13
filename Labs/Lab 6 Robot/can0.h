@@ -36,12 +36,9 @@
 
 // 11 bit
 typedef enum PackageID_t {
-	IRSensor0 = 1,
-	IRSensor1 = 2,
-	IRSensor2 = 3,
-	IRSensor3 = 4,
-	Motors = 6,
-	PingSensor = 0x10,
+	IRSensor = 1,
+	PingSensor = 2,
+	Motors = 3,
 } PackageID;
 
 // Returns true if receive data is available

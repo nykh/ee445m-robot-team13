@@ -35,9 +35,9 @@ int main(void){
 	
 	
 	
-	PWM0_1_MotionUpdate(1000,1);
+	PWM0_1_MotionUpdate(0,1);
 	//right
-	PWM0_0_MotionUpdate(1000,1);
+	PWM0_0_MotionUpdate(0,1);
 	//left
 	
 //  PWM0_Init(2500, 1250);         // initialize PWM0, 10000 Hz, 50% duty

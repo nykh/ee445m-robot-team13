@@ -110,7 +110,7 @@ static unsigned char calibrate(unsigned short adcval) {
 	
 	// saturation
 	if (i == 0) return 10;
-	else if(i == Calibtable_len) return 50;
+	else if(i == Calibtable_len) return 70;
 	else return (unsigned char) (10+5*(i-1) + 5*(adcval - Calitable[i])/(Calidiff[i-1]));
 }
 

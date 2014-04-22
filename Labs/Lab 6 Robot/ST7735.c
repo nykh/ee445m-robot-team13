@@ -1384,14 +1384,14 @@ void ST7735_Message (int device, int line, const char *string, long value){
 	valueBuff[i++] = ' ';
 	longToString(&valueBuff[i],value);
 	sp = valueBuff;
-	OS_bWait(&LCDFree);
+	//OS_bWait(&LCDFree);
 	while (*sp){																								//terating through string to find each charachter
 	  	ST7735_DrawChar(x, y, *sp, ST7735_Color565(255, 128, 128), 0, 1);				//Print each charachter
 		  sp ++;
 	  	x+= 6;
 	}
 	ST7735_FillRect(x, y, 128-x, 10, 0);									// Clear the right side of the sentence
-	OS_bSignal(&LCDFree);
+	//OS_bSignal(&LCDFree);
 }
 
 //------------longToString------------

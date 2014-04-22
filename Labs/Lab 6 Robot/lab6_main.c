@@ -2,29 +2,39 @@
 #include "SysTick.h"
 #include "OS.h"
 #include "semaphore.h"
-#include "myadc.h"
-#include "ST7735.h"
-#include "interpreter.h"
 #include "can0.h"
-#include "gpio_debug.h"
+
+#include "ST7735.h"
+#include "motor.h"
+#include "atan.h"
+
 #include "ir_sensor.h"
 #include "ping.h"
-#include "motor.h"
+
+
+#include "interpreter.h"
+#include "gpio_debug.h"
 
 #define SAMPLING_RATE 2000
 #define TIMESLICE 2*TIME_1MS  // thread switch time in system time units
 
-#define MAIN 0		//1 = receiver, 0 = transmitter
+#define MAIN 1		//1 = receiver, 0 = transmitter
+
 /************************ Debug info ***********************/
 unsigned int NumCreated;
 
 /********************** Public functions *******************/
 
-#if MAIN
+#if MAIN  /******************** Motor Control side *******************/
+
+#define DEBUG  0
+
 static long CurrentSpeed0 = 0;
 static long CurrentSpeed1 = 0;
 static long RefSpeed0 = 0;
 static long RefSpeed1 = 0;
+
+unsigned char SensorF, SensorR, SensorL, SensorFR, SensorLR, RightAngle;
 
 void NetworkReceive(void) {
 	PackageID receiveID;
@@ -35,61 +45,95 @@ void NetworkReceive(void) {
 	Motor_0_MotionUpdate(0, 1);
 	Motor_1_MotionUpdate(0, 1);
 	RefSpeed0 = RefSpeed1 = 3000;
-	ST7735_Message(0,4,"Test", 0);
 	while (1) {
 		CAN0_GetMail(&receiveID, canData);	
-
-		if (receiveID == IRSensor) {
-//				unsigned char sensor1 = canData[0];
+		/******************************************/Debug_LED_heartbeat();
+		
+		if (receiveID == IRSensor) {			
+				SensorR = canData[2];
+				SensorL = canData[0];
+				SensorF = canData[3];
 			
+			#if DEBUG
 				ST7735_Message(0,0,"IR0: ", canData[0]);
 				ST7735_Message(0,1,"IR1: ", canData[1]);
 				ST7735_Message(0,2,"IR2: ", canData[2]);
 				ST7735_Message(0,3,"IR3: ", canData[3]);
-				
-//				if (sensor1 > 1000) {
-//					RefSpeed0 = 12000 - (sensor1-1000)*30;
-//					if (RefSpeed0 & 0x80000000) {
-//						RefSpeed0 = 0;
-//					}
-//					RefSpeed1 = 12000;
-//				}else {
-//					RefSpeed0 = RefSpeed1 = 12000;
-//				}
+			#endif
+			
+				RightAngle = (unsigned char) (myatan((double)SensorR / (double)SensorF)*180/3.14 + 0.5);
+
 		} else if(receiveID == PingSensor) {
-				const char *label[4] = {"Ping0: ", "Ping1: ", "Ping2: ", "Ping3: "};
+				SensorFR = canData[0];
 				
-				ST7735_Message(1,0, label[0], canData[0]);
-				ST7735_Message(1,1, label[1], canData[1]);
-				ST7735_Message(1,2, label[2], canData[2]);
-				ST7735_Message(1,3, label[3], canData[3]);
+			#if DEBUG
+				ST7735_Message(1,0, "Ping0: ", canData[0]);
+				ST7735_Message(1,1, "Ping1: ", canData[1]);
+				ST7735_Message(1,2, "Ping2: ", canData[2]);
+				ST7735_Message(1,3, "Ping3: ", canData[3]);
+			#endif
+				
 		}
 	}
 }
 
-#define INC_STEP  300
-static long IncrementalController( long ref,  long curr) {
-	if (curr > ref ) {
-		if (curr > ref + INC_STEP ) {
-		  return (curr-INC_STEP);
-		} else {
-			return ref;
-		}
-	} else {
-		if (curr < ref - INC_STEP) {
-			return (curr+INC_STEP);
-		} else {
-			return ref;
-		}
+
+#define INC_STEP  3000
+void IncrementalController( long ref,  long *curr) {
+	if (*curr > ref + INC_STEP ) {
+		  *curr -= INC_STEP;
+	} else if (*curr < ref - INC_STEP) {
+			*curr += INC_STEP;
 	}
 }
 
 void Controller(void) {
-	CurrentSpeed0 = IncrementalController(RefSpeed0, CurrentSpeed0);
-	CurrentSpeed1 = IncrementalController(RefSpeed1, CurrentSpeed1);
-	Motor_0_MotionUpdate(CurrentSpeed0, 1);
-	Motor_1_MotionUpdate(CurrentSpeed1, 1);
+	
+	#if !DEBUG
+
+	static int i = 0;
+	i = (i+1)&0x7;
+	switch(i) {
+		case 0: ST7735_Message(1,0, "Right: ", SensorR); break;
+		case 1: ST7735_Message(1,1, "Front: ", SensorF); break;
+		case 2: ST7735_Message(1,3, "Angle: ", RightAngle); break;
+		case 3: ST7735_Message(0,0, "Speed0: ", (unsigned long) RefSpeed0); break;
+		case 4: ST7735_Message(0,1, "Speed1: ", (unsigned long) RefSpeed1); break;
+		case 5:	ST7735_Message(1,2, "FroRight: ", SensorFR);			
+	}
+	#endif
+	
+	#define Fast_Speed  18000
+	#define Slow_Speed  12000
+	#define Steering    500
+	
+	if (SensorF >= 100) {
+		RefSpeed0 = RefSpeed1 = Fast_Speed;
+	} else if (SensorF >= 50) {
+		RefSpeed0 = RefSpeed1 = Slow_Speed;
+	} else {
+		if (SensorR >= 50) {    //Front is block, right is free
+					RefSpeed0 = 12000 - (50-SensorF)*Steering;
+					if (RefSpeed0 & 0x80000000) {
+						RefSpeed0 = 0;
+					}
+					RefSpeed1 = 12000;
+		} else {
+			RefSpeed1 = 12000;
+			RefSpeed0 = 12000 + RightAngle*50;
+			if (RefSpeed0 > 25000) RefSpeed0 = 25000;
+		}
+	}
+	
+	if (CurrentSpeed1 == RefSpeed1) {
+		IncrementalController(RefSpeed0, &CurrentSpeed0);
+	} else {
+		IncrementalController(RefSpeed1, &CurrentSpeed1);
+		CurrentSpeed0 = CurrentSpeed1;
+	}
+	Motor_MotionUpdate(CurrentSpeed0, CurrentSpeed1, 1);
 }
+
 
 int main(void) {
   PLL_Init();
@@ -98,6 +142,7 @@ int main(void) {
 	ST7735_SetRotation(1);
   ST7735_FillScreen(0); // set screen to black
 
+	/*********************************************/Debug_LED_Init();
 	
   //OS_InitSemaphore(&Sema4UART, 1);
   OS_Init();
@@ -110,42 +155,30 @@ int main(void) {
   OS_Launch(TIMESLICE);
 }
 
-#else 
+
+
+#else  /******************* Receiver = DAS side *******************/
 
 unsigned char IRvalues[4];
 unsigned char pingValue[4];
 
-void NetworkSend(void) {
+
+void NetworkSend(void) {	
 	unsigned char CanData[4];
-	
-	CAN0_Open();
-	
-	while(1) {
-		OS_bWait(&Sema4CAN);
-		
-		CanData[0] = IRvalues[0];
-		CanData[1] = IRvalues[1];
-		CanData[2] = IRvalues[2];
-		CanData[3] = IRvalues[3];
-		CAN0_SendData(IRSensor, CanData);
-
-		CanData[0] = pingValue[0];
-		CanData[1] = pingValue[1];
-		CanData[2] = pingValue[2];
-		CanData[3] = pingValue[3];
-		CAN0_SendData(PingSensor, CanData);
-		
-		OS_bSignal(&Sema4CAN);
-		
-	}
-}
-
-void IRSensorSend(void) {	
-//	unsigned char CanData[4];
 	
 	// may Block
 	IR_getValues(IRvalues);
+	CanData[0] = IRvalues[0];
+	CanData[1] = IRvalues[1];
+	CanData[2] = IRvalues[2];
+	CanData[3] = IRvalues[3];
+	CAN0_SendData(IRSensor, CanData);
 	
+	CanData[0] = pingValue[0];
+	CanData[1] = pingValue[1];
+	CanData[2] = pingValue[2];
+	CanData[3] = pingValue[3];
+	CAN0_SendData(PingSensor, CanData);
 	// perform distance conversion
 	
 //		OS_bWait(&Sema4CAN);
@@ -182,6 +215,7 @@ int main(void) {
   OS_Init();
 	
 	
+	CAN0_Open();
 	OS_InitSemaphore(&Sema4CAN, 1);
 	
 	Debug_LED_Init();
@@ -189,10 +223,9 @@ int main(void) {
   NumCreated = 0;
   //NumCreated += OS_AddThread(&Interpreter,128,1);
 	IR_Init(); 
-	NumCreated += OS_AddPeriodicThread(&IRSensorSend, 1000*TIME_1MS, 3); 
+	NumCreated += OS_AddPeriodicThread(&NetworkSend, 50*TIME_1MS, 3); 
 	NumCreated += OS_AddThread(&PingSensorSend, 128, 3);
 	
-	NumCreated += OS_AddThread(&NetworkSend, 128, 4);  // somehow this must be a lower priority than the other threads
   
 	
 	

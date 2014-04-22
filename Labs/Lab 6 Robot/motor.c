@@ -29,7 +29,7 @@
 
 #define PERIOD       25000
 
-#define MOTOR_DIFF   0
+#define MOTOR_DIFF   750
 
 // period is 16-bit number of PWM clock cycles in one period (3<=period)
 // duty is number of PWM clock cycles output is high  (2<=duty<=period-1)
@@ -81,7 +81,7 @@ void Motor_0_MotionUpdate(unsigned long duty, unsigned char direction){
 	if (duty<2) duty = 2;
 	if (duty>PERIOD-2) duty = PERIOD -2;
 	
-	PB7 = (direction != 0)<<7;          // PB4 controls the direction of one wheel
+	PB7 = (direction != 0)<<7;          // PB7 controls the direction of one wheel
 	value = (direction)?(PERIOD - duty):(duty);           // 6) count value when output rises
 	PWM0_0_CMPA_R = value;
 }
@@ -93,14 +93,21 @@ void Motor_1_MotionUpdate(unsigned long duty, unsigned char direction){
 	long value;
 	if (duty<2) duty = 2;
 	if (duty>PERIOD-2) duty = PERIOD -2;
-	PB5 = (direction != 0)<<5;          // PB4 controls the direction of one wheel
+	
+	PB5 = (direction != 0)<<5;          // PB5 controls the direction of one wheel
 	value = (direction)?(PERIOD - duty):(duty);           // 6) count value when output rises
 	PWM0_1_CMPA_R = value;
 }
 
-void Motor_MotionUpdate(unsigned long duty, unsigned char direction){	
-	PB5 = PB7 = (direction != 0)<<5;          // PB4 controls the direction of one wheel
-	PWM0_0_CMPA_R = (direction)? (duty - 1) : (PERIOD - duty - 1);;
-	PWM0_1_CMPA_R = (direction)? (duty + MOTOR_DIFF - 1) : (PERIOD - duty - MOTOR_DIFF - 1);;  
-	// 6) count value when output rises
+void Motor_MotionUpdate(unsigned long duty0, unsigned long duty1, unsigned char direction){	
+	PB5 = (direction != 0)<<5;
+	PB7 = (direction != 0)<<7;
+	
+	if (duty0<2) duty0 = 2;
+	if (duty0>PERIOD-2) duty0 = PERIOD -2;
+	if (duty1<2) duty1 = 2;
+	if (duty1>PERIOD-2) duty1 = PERIOD -2;
+	
+	PWM0_0_CMPA_R = (direction)? (PERIOD - duty0 - MOTOR_DIFF):(duty0 + MOTOR_DIFF);
+	PWM0_1_CMPA_R = (direction)? (PERIOD - duty1): (duty1);
 }

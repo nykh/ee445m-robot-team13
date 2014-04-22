@@ -133,8 +133,12 @@ void IR_Init(void) {
 
 void IR_getValues (unsigned char *buffer) {
 	
-	buffer[0] = calibrate(Filter(&filter0, data[0]));
-	buffer[1] = calibrate(Filter(&filter1, data[1]));
-	buffer[2] = calibrate(Filter(&filter2, data[2]));
-	buffer[3] = calibrate(Filter(&filter3, data[3]));
+//	buffer[0] = calibrate(Filter(&filter0, data[0]));
+//	buffer[1] = calibrate(Filter(&filter1, data[1]));
+//	buffer[2] = calibrate(Filter(&filter2, data[2]));
+//	buffer[3] = calibrate(Filter(&filter3, data[3]));
+	buffer[0] = calibrate(data[0]);
+	buffer[1] = calibrate(data[1]);
+	buffer[2] = calibrate(data[2]);
+	buffer[3] = calibrate(data[3]);
 }

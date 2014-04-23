@@ -97,29 +97,26 @@ void Motor_1_MotionUpdate(unsigned long duty, unsigned char direction){
 	PWM0_1_CMPA_R = value;
 }
 
+// Input: [-(PERIOD-2), -2] U [2, PERIOD-2]
 void Motor_MotionUpdate(long duty0, long duty1){	
-	char direction0, direction1;
-	if (duty0>0) {
-		direction0 = 1;
-	} else {
-		direction0 = 0;
+	char dir0, dir1;
+	if (!(dir0 = (duty0>0))) {
 		duty0 = -duty0;
 	}
-	if (duty1>0) {
-		direction1 = 1;
-	} else {
-		direction1 = 0;
+	duty0 += MOTOR_DIFF;
+	
+	if (!(dir1 = (duty1>0))) {
 		duty1 = -duty1;
 	}
-
-	PB5 = (direction0 != 0)<<5;
-	PB7 = (direction1 != 0)<<7;
+	
+	PB7 = dir0 << 7;
+	PB5 = dir1 << 5;
 	
 	if (duty0<2) duty0 = 2;
 	if (duty0>PERIOD-2) duty0 = PERIOD -2;
 	if (duty1<2) duty1 = 2;
 	if (duty1>PERIOD-2) duty1 = PERIOD -2;
 	
-	PWM0_0_CMPA_R = (direction0)? (PERIOD - duty0 - MOTOR_DIFF):(duty0 + MOTOR_DIFF);
-	PWM0_1_CMPA_R = (direction1)? (PERIOD - duty1):(duty1);
+	PWM0_0_CMPA_R = (dir0)? (PERIOD - duty0):(duty0);
+	PWM0_1_CMPA_R = (dir1)? (PERIOD - duty1):(duty1);
 }

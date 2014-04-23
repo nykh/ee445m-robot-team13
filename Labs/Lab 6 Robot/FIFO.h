@@ -31,11 +31,6 @@
 long StartCritical (void);    // previous I bit, disable interrupts
 void EndCritical(long sr);    // restore I bit to previous value
 
-// Two-index implementation of the transmit FIFO
-// can hold 0 to TXFIFOSIZE elements
-#define TXFIFOSIZE 16 // must be a power of 2
-#define TXFIFOSUCCESS 1
-#define TXFIFOFAIL    0
 
 typedef char txDataType;
 

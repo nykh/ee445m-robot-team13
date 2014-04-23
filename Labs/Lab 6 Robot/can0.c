@@ -44,18 +44,30 @@
 
 #include "os.h"
 #include "semaphore.h"
+#include "FIFO.h"
 
 #include "can0.h"
 #include "inc/tm4c123gh6pm.h"
 
 
+
 #define NULL 0
 // reverse these IDs on the other microcontroller
 
-// Mailbox linkage from background to foreground
-PackageID static RCVID;
-unsigned char static RCVData[4];
-int static MailFlag;
+// FIFO linkage from background to foreground
+
+// Two-index implementation of the transmit FIFO
+// can hold 0 to TXFIFOSIZE elements
+#define RCVFIFOSIZE    16 // must be a power of 2
+#define RCVFIFOSUCCESS 1
+#define RCVFIFOFAIL    0
+
+typedef struct {
+	PackageID RCVID;
+	unsigned char RCVData[4];
+} RCVPacket;
+
+AddIndexFifo(RCV,RCVFIFOSIZE,RCVPacket,RCVFIFOSUCCESS,RCVFIFOFAIL)
 
 //*****************************************************************************
 //
@@ -72,16 +84,19 @@ void CAN0_Handler(void){ unsigned char data[4];
     ulIDStatus = CANStatusGet(CAN0_BASE, CAN_STS_NEWDAT);
     for(i = 0; i < 32; i++){    //test every bit of the mask
       if( (0x1 << i) & ulIDStatus){  // if active, get data
-        CANMessageGet(CAN0_BASE, (i+1), &xTempMsgObject, true);
-        //if(xTempMsgObject.ulMsgID == RCV_ID){
-				RCVID = (PackageID) xTempMsgObject.ulMsgID;
-				RCVData[0] = data[0];
-				RCVData[1] = data[1];
-				RCVData[2] = data[2];
-				RCVData[3] = data[3];
-				//MailFlag = true;   // new mail
+				RCVPacket newpacket;
+				
+				CANMessageGet(CAN0_BASE, (i+1), &xTempMsgObject, true);
+				
+				newpacket.RCVID = (PackageID) xTempMsgObject.ulMsgID;
+				newpacket.RCVData[0] = data[0];
+				newpacket.RCVData[1] = data[1];
+				newpacket.RCVData[2] = data[2];
+				newpacket.RCVData[3] = data[3];
+				
+				RCVFifo_Put(newpacket);
+				
 				OS_bSignal(&Sema4CAN);
-        //}
       }
     }
   }
@@ -105,7 +120,7 @@ void static CAN0_Setup_Message_Object( unsigned long MessageID, \
 // Initialize CAN port
 void CAN0_Open(void){unsigned long volatile delay; 
 
-  MailFlag = false;
+	RCVFifo_Init();
 	OS_InitSemaphore(&Sema4CAN, 0);
 	
   SYSCTL_RCGCCAN_R |= 0x00000001;  // CAN0 enable bit 0
@@ -137,35 +152,18 @@ void CAN0_SendData(PackageID sendID, unsigned char data[4]){
   CAN0_Setup_Message_Object((unsigned long) sendID, NULL, 4, data, (unsigned long) sendID, MSG_OBJ_TYPE_TX);
 }
 
-// Returns true if receive data is available
-//         false if no receive data ready
-int CAN0_CheckMail(void){
-  return MailFlag;
-}
-// if receive data is ready, gets the data and returns true
-// if no receive data is ready, returns false
-/*****Not implemented
-int CAN0_GetMailNonBlock(unsigned char data[4]){
-	if(MailFlag){
-    data[0] = RCVData[0];
-    data[1] = RCVData[1];
-    data[2] = RCVData[2];
-    data[3] = RCVData[3];
-    MailFlag = false;
-    return true;
-  }
-  return false;
-}
-*/
-
 // if receive data is ready, gets the data 
 // if no receive data is ready, it waits until it is ready
 void CAN0_GetMail(PackageID *receiveID, unsigned char data[4]){
+	RCVPacket get;
+	
   OS_bWait(&Sema4CAN);
-	*receiveID = RCVID;
-	data[0] = RCVData[0];
-	data[1] = RCVData[1];
-	data[2] = RCVData[2];
-	data[3] = RCVData[3];
+	if(RCVFifo_Get(&get)) {
+		*receiveID = get.RCVID;
+		data[0] = get.RCVData[0];
+		data[1] = get.RCVData[1];
+		data[2] = get.RCVData[2];
+		data[3] = get.RCVData[3];
+	}
 }
 

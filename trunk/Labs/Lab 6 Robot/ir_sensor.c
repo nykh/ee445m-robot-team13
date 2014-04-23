@@ -18,6 +18,9 @@
 
 static unsigned short data[4];
 
+#define APPLY_FILTER 1
+
+#if APPLY_FILTER
 /************************* Median Filter *******************/
 static unsigned short median5(unsigned short *buf5){
 	unsigned short *bufm=buf5;
@@ -53,6 +56,8 @@ unsigned short MedianFilter(MedFilter *f, unsigned short n) {
 	f->buf[i-5] = f->buf[i] = n;
 	return median5(&f->buf[i-5+1]);
 }
+
+#endif
 
 /********************* Calibration detail ******************/
 #define Calibtable_len       13
@@ -121,13 +126,15 @@ void IR_Init(void) {
 }
 
 void IR_getValues (unsigned char *buffer) {
-	
+	#if APPLY_FILTER
 	buffer[0] = calibrate(MedianFilter(&filter0, data[0]));
 	buffer[1] = calibrate(MedianFilter(&filter1, data[1]));
 	buffer[2] = calibrate(MedianFilter(&filter2, data[2]));
 	buffer[3] = calibrate(MedianFilter(&filter3, data[3]));
-//	buffer[0] = calibrate(data[0]);
-//	buffer[1] = calibrate(data[1]);
-//	buffer[2] = calibrate(data[2]);
-//	buffer[3] = calibrate(data[3]);
+	#else
+	buffer[0] = calibrate(data[0]);
+	buffer[1] = calibrate(data[1]);
+	buffer[2] = calibrate(data[2]);
+	buffer[3] = calibrate(data[3]);
+	#endif
 }

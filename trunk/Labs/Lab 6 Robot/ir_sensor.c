@@ -18,51 +18,40 @@
 
 static unsigned short data[4];
 
-/*****************************************************/
+/************************* Median Filter *******************/
+static unsigned short median5(unsigned short *buf5){
+	unsigned short *bufm=buf5;
+	int temp=0, i=0, j=0;
 
+	for(j=0;j<5;j++){
+		for(i=0;i<5;i++){
+			if(bufm[i]>bufm[i+1]){
+				temp=bufm[i];
+				bufm[i]=bufm[i+1];
+				bufm[i+1]=temp;
+			}
+		}
+	}
 
-/*****************************************************/
-
-/*********************** Filter ****************************/
-#define FILTER_LENGTH 51
-const long ScaleFactor = 16384;
-const long H[51]={-11,10,9,-5,1,0,-19,6,48,-12,-92,
-     17,155,-20,-243,22,370,-24,-559,24,881,-24,-1584,24,4932,
-     8578,4932,24,-1584,-24,881,24,-559,-24,370,22,-243,-20,155,
-     17,-92,-12,48,6,-19,0,1,-5,9,10,-11};
+	return	bufm[2];
+}
 
 typedef struct {
-	// this MACQ needs twice the size of FILTER_LENGTH
-	long x[2*FILTER_LENGTH];
+	unsigned short buf[10];
 	unsigned char index;
-} FilterType;
+} MedFilter;
 
-static unsigned short IRsensor1;
+MedFilter filter0 = {{0}, 9};
+MedFilter filter1 = {{0}, 9};
+MedFilter filter2 = {{0}, 9};
+MedFilter filter3 = {{0}, 9};
 
-static FilterType filter0 = {{0},FILTER_LENGTH-1};
-static FilterType filter1 = {{0},FILTER_LENGTH-1};
-static FilterType filter2 = {{0},FILTER_LENGTH-1};
-static FilterType filter3 = {{0},FILTER_LENGTH-1};
-
-// Filter
-// Digital FIR filter, assuming fs=1 Hz
-// Coefficients generated with FIRdesign64.xls
-// 
-// y[i]= (h[0]*x[i]+h[1]*x[i-1]+¡K+h[63]*x[i-63])/256;
-static unsigned short Filter(FilterType *f, unsigned short data) {
-  long y = 0;
-  unsigned char i;
-  
-  if(++f->index == 2*FILTER_LENGTH) f->index = FILTER_LENGTH;
-  f->x[f->index] = f->x[f->index-FILTER_LENGTH] = data;
-  
-  // Assuming there is no overflow
-  for(i = 0; i < FILTER_LENGTH; ++i){
-		y += H[i]*f->x[f->index-i];
-	}
-  y /= ScaleFactor;
-  
-  return y;
+unsigned short MedianFilter(MedFilter *f, unsigned short n) {
+	unsigned char i = f->index;
+	if(++f->index == 10) f->index = 5;
+	
+	f->buf[i-5] = f->buf[i] = n;
+	return median5(&f->buf[i-5+1]);
 }
 
 /********************* Calibration detail ******************/
@@ -133,12 +122,12 @@ void IR_Init(void) {
 
 void IR_getValues (unsigned char *buffer) {
 	
-//	buffer[0] = calibrate(Filter(&filter0, data[0]));
-//	buffer[1] = calibrate(Filter(&filter1, data[1]));
-//	buffer[2] = calibrate(Filter(&filter2, data[2]));
-//	buffer[3] = calibrate(Filter(&filter3, data[3]));
-	buffer[0] = calibrate(data[0]);
-	buffer[1] = calibrate(data[1]);
-	buffer[2] = calibrate(data[2]);
-	buffer[3] = calibrate(data[3]);
+	buffer[0] = calibrate(MedianFilter(&filter0, data[0]));
+	buffer[1] = calibrate(MedianFilter(&filter1, data[1]));
+	buffer[2] = calibrate(MedianFilter(&filter2, data[2]));
+	buffer[3] = calibrate(MedianFilter(&filter3, data[3]));
+//	buffer[0] = calibrate(data[0]);
+//	buffer[1] = calibrate(data[1]);
+//	buffer[2] = calibrate(data[2]);
+//	buffer[3] = calibrate(data[3]);
 }

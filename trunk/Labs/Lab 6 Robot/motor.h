@@ -27,6 +27,16 @@
 #define MOTOR_CW  0
 #define MOTOR_CCW 1
 
+#define Carpet_Floor  1
+#define Smooth_Floor  2
+#define Floor         Smooth_Floor
+
+#if Floor == Carpet_Floor
+#define MOTOR_DIFF   750
+#else
+#define MOTOR_DIFF   200
+#endif
+
 // period is 16-bit number of PWM clock cycles in one period (3<=period)
 // duty is number of PWM clock cycles output is high  (2<=duty<=period-1)
 // PWM clock rate = processor clock rate/SYSCTL_RCC_PWMDIV

@@ -7,9 +7,12 @@
 #include <string.h>
 #include "ST7735.h"
 
-
 #include "OS.h"
 #include "semaphore.h"
+
+// Commands come from these sources
+#include "heap2.h"
+#include "heap_debug.h"
 
 //ASCII codes for keyboard inputs
 #define BACKSPACE               0x08  // back up one character
@@ -37,31 +40,64 @@ typedef struct {
 // Commands
 static void parseLCDCommand (void);
 static void helpList (void);
+
+static void parseMotorCommand(void);
 /* System tasks */
 //static void adjustFilterCommand(void);
 
 /* Debugging functions */
-static void parseCriticalSectionCommand(void);
-static void parseProfilingCommand(void);
+#ifdef __Performance_Measurement__
+	#ifdef __Critical_Interval_Measurement__
+		static void parseCriticalSectionCommand(void);
+	#endif
+	#ifdef __Profiling__
+		static void parseProfilingCommand(void);
+	#endif
+#endif
+
+#ifdef __heap_debug__
+static void parseMallocCommand(void);
+#endif 
 
 //function protoypes for private functions
 static long stringToInteger (char *string);
 
 //Commands table, edit both the array and element numbers to update the table
-#define NUM_COMMANDS 4
+#define TRUE_REAL_NUM_COMMANDS 4
+
+#ifdef __heap_debug__
+#define REAL_NUM_COMMANDS TRUE_REAL_NUM_COMMANDS+2
+#else
+#define REAL_NUM_COMMANDS TRUE_REAL_NUM_COMMANDS
+#endif
+
+#ifdef __Performance_Measurement__
+#define NUM_COMMANDS REAL_NUM_COMMANDS+2
+#else
+#define NUM_COMMANDS REAL_NUM_COMMANDS
+#endif
+
 static const commandTable Table[NUM_COMMANDS]= {
 	{"lcd", &parseLCDCommand},
 	{"help", &helpList},
 
-	// DSP commands
-	//{"filter", &adjustFilterCommand},
+#ifdef __heap_debug__	
+	{"heap", &Heap_dump},
+	{"malloc", &parseMallocCommand},
+#endif
 	
-
+	{"motor", &parseMotorCommand},
+	
+#ifdef __Performance_Measurement__
+	#ifdef __Critical_Interval_Measurement__
 	// Critical Section Measurements
 	{"cs", &parseCriticalSectionCommand},
+	#endif
+	#ifdef __Profiling__
 	// Profiling measurement
 	{"pf", &parseProfilingCommand},
-
+	#endif
+#endif
 };
 
 //Description: private function that parses the "help" parameters and executes LCD functions
@@ -70,8 +106,12 @@ static const commandTable Table[NUM_COMMANDS]= {
 static void helpList () {
 	printf( \
 	"1- lcd: parameters= device, line, output string\r\n" \
-	"2- cs: parameters= duration of measurement\r\n" \
-	"3- pf: clear, start profiling and dump result\r\n" \
+	"2- heap: dump heap\r\n" \
+	
+	"3- motor: motor setting\r\n" \
+	
+	"d1- cs: parameters= duration of measurement\r\n" \
+	"d2- pf: clear, start profiling and dump result\r\n" \
 	);
 	//"5- filter: turn FIR filter on/off. \r\n" 
 }
@@ -79,6 +119,8 @@ static void helpList () {
 void Interpreter(void) {
 	char string[50];
 	UART_Init();
+	OS_InitSemaphore(&Sema4UART, 1);
+	
 	OS_bWait(&Sema4UART);	
 		printf("\r\nWelcome to OS NS ....\r\n");
 	OS_bSignal(&Sema4UART);
@@ -106,48 +148,6 @@ static void Interpreter_ParseInput(char *input) {
 	}
 	printf("command is invalid!\r\n");
 	return;
-}
-
-
-//Description: private function that parses the "lcd" parameters and executes LCD functions
-//Input: None, though strtok must have been called to get the first token
-//Output: none
-static void parseLCDCommand () {
-	char* buffer; 
-  short device, line;
-	
-	const char *msg = "Error: Enter a valid line number as the %s parameter!\r\n";
-	
-	buffer = strtok(NULL, " ");						// get the first token
-	if (buffer != NULL) {
-		device = stringToInteger (buffer);	
-		if (device <0 || device > 1) {			// check if device number is valid
-			printf(msg, "first");
-			return;
-		}
-	} else{
-		printf(msg, "first");
-		return;
-	}
-	buffer = strtok(NULL, " ");						// get the second token
-	if ( buffer != NULL) {
-		line = stringToInteger (buffer);
-		if (line < 0 || line > 7){					// check if line number is valid
-		  printf(msg, "second");
-			return;
-		}
-	} else{
-		printf(msg, "second");
-		return;
-	}
-	buffer = strtok(NULL, " ") ;					// get the third token
-	if ( buffer != NULL) {
-		ST7735_Message (device, line, buffer, 0);		// This function is executed if all inputs are correct
-		printf("Printed the string on LCD\r\n");	
-	} else{
-		printf(msg, "third");
-		return;
-	}
 }
 
 //Description: private function that converts a string to long integer
@@ -199,6 +199,83 @@ static char *getline(char *str, unsigned short length) {
 #undef GETC
 #undef PUTC
 
+
+//Description: private function that parses the "lcd" parameters and executes LCD functions
+//Input: None, though strtok must have been called to get the first token
+//Output: none
+static void parseLCDCommand () {
+	char* buffer; 
+  short device, line;
+	
+	const char *msg = "Error: Enter a valid line number as the %s parameter!\r\n";
+	
+	buffer = strtok(NULL, " ");						// get the first token
+	if (buffer != NULL) {
+		device = stringToInteger (buffer);	
+		if (device <0 || device > 1) {			// check if device number is valid
+			printf(msg, "first");
+			return;
+		}
+	} else{
+		printf(msg, "first");
+		return;
+	}
+	buffer = strtok(NULL, " ");						// get the second token
+	if ( buffer != NULL) {
+		line = stringToInteger (buffer);
+		if (line < 0 || line > 7){					// check if line number is valid
+		  printf(msg, "second");
+			return;
+		}
+	} else{
+		printf(msg, "second");
+		return;
+	}
+	buffer = strtok(NULL, " ") ;					// get the third token
+	if ( buffer != NULL) {
+		ST7735_Message (device, line, buffer, 0);		// This function is executed if all inputs are correct
+		printf("Printed the string on LCD\r\n");	
+	} else{
+		printf(msg, "third");
+		return;
+	}
+}
+
+//Description: private function that parses the "motor" parameters
+//Input: None, though strtok must have been called to get the first token
+//Output: none
+static void parseMotorCommand(void) {
+	char* buffer; 
+	
+	puts("Not implemented.\r");
+}
+
+
+
+#ifdef __heap_debug__
+
+// Description: for debugging the heap
+static void parseMallocCommand(void) {
+	char *buffer;
+	int n;
+	
+	const char *msg = "Error: Enter a positive number n, program will malloc n char\r";
+	
+	if (buffer = strtok(NULL, " ")) {
+		if((n = (unsigned short)stringToInteger(buffer)) > 0) {
+			HEAP_Malloc(n);
+			puts("Success!\r");
+		} else {
+			puts(msg);
+		}
+	} else{
+		puts(msg);
+		return;
+	}
+}
+
+#endif
+
 /************************* DSP commands **********************/
 //Descriptiont: command for turning the filter on or off
 // Expects parameter "on" or "off" 
@@ -229,6 +306,8 @@ static void adjustFilterCommand(void) {
 #undef NOT_USING
 */
 
+#ifdef __Critical_Interval_Measurement__
+
 //Description: command for parsing Critical Section measurement requests
 // Can invokde OS_Critical_Dump, OS_Critical_Start
 //Input: None
@@ -251,6 +330,10 @@ static void parseCriticalSectionCommand(void) {
 	}
 }
 
+#endif
+
+#ifdef __Profiling__
+
 //Description: command for parsing Profiling requests
 // Can invokde OS_Profile_Start and, OS_Profile_Clear, OS_Profile_Dump
 //Input: None
@@ -260,3 +343,4 @@ static void parseProfilingCommand(void) {
 	OS_Profile_Start();
 }
 
+#endif

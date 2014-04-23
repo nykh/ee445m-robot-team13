@@ -29,8 +29,6 @@
 
 #define PERIOD       25000
 
-#define MOTOR_DIFF   750
-
 // period is 16-bit number of PWM clock cycles in one period (3<=period)
 // duty is number of PWM clock cycles output is high  (2<=duty<=period-1)
 // PWM clock rate = processor clock rate/SYSCTL_RCC_PWMDIV
@@ -109,5 +107,5 @@ void Motor_MotionUpdate(unsigned long duty0, unsigned long duty1, unsigned char 
 	if (duty1>PERIOD-2) duty1 = PERIOD -2;
 	
 	PWM0_0_CMPA_R = (direction)? (PERIOD - duty0 - MOTOR_DIFF):(duty0 + MOTOR_DIFF);
-	PWM0_1_CMPA_R = (direction)? (PERIOD - duty1): (duty1);
+	PWM0_1_CMPA_R = (direction)? (PERIOD - duty1):(duty1);
 }

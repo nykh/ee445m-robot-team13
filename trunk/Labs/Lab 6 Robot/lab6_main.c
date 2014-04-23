@@ -36,56 +36,8 @@ static long RefSpeed1 = 0;
 
 unsigned char SensorF, SensorR, SensorL, SensorFR, SensorLR, RightAngle;
 
-void NetworkReceive(void) {
-	PackageID receiveID;
-	unsigned char canData[4];
-	Debug_LED_Init();
-	CAN0_Open();
-	Motor_Init(5000);
-	Motor_0_MotionUpdate(0, 1);
-	Motor_1_MotionUpdate(0, 1);
-	RefSpeed0 = RefSpeed1 = 3000;
-	while (1) {
-		CAN0_GetMail(&receiveID, canData);	
-		/******************************************/Debug_LED_heartbeat();
-		
-		if (receiveID == IRSensor) {			
-				SensorR = canData[2];
-				SensorL = canData[0];
-				SensorF = canData[3];
-			
-			#if DEBUG
-				ST7735_Message(0,0,"IR0: ", canData[0]);
-				ST7735_Message(0,1,"IR1: ", canData[1]);
-				ST7735_Message(0,2,"IR2: ", canData[2]);
-				ST7735_Message(0,3,"IR3: ", canData[3]);
-			#endif
-			
-				RightAngle = (unsigned char) (myatan((double)SensorR / (double)SensorF)*180/3.14 + 0.5);
-
-		} else if(receiveID == PingSensor) {
-				SensorFR = canData[0];
-				
-			#if DEBUG
-				ST7735_Message(1,0, "Ping0: ", canData[0]);
-				ST7735_Message(1,1, "Ping1: ", canData[1]);
-				ST7735_Message(1,2, "Ping2: ", canData[2]);
-				ST7735_Message(1,3, "Ping3: ", canData[3]);
-			#endif
-				
-		}
-	}
-}
-
-
-#define INC_STEP  3000
-void IncrementalController( long ref,  long *curr) {
-	if (*curr > ref + INC_STEP ) {
-		  *curr -= INC_STEP;
-	} else if (*curr < ref - INC_STEP) {
-			*curr += INC_STEP;
-	}
-}
+// Function implementing an incremental controller
+static void IncrementalController( long ref,  long *curr);
 
 void Controller(void) {
 	
@@ -135,6 +87,56 @@ void Controller(void) {
 }
 
 
+static void NetworkReceive(void) {
+	PackageID receiveID;
+	unsigned char canData[4];
+	Debug_LED_Init();
+	CAN0_Open();
+	Motor_Init(5000);
+	Motor_0_MotionUpdate(0, 1);
+	Motor_1_MotionUpdate(0, 1);
+	RefSpeed0 = RefSpeed1 = 3000;
+	while (1) {
+		CAN0_GetMail(&receiveID, canData);	
+		/******************************************/Debug_LED_heartbeat();
+		
+		if (receiveID == IRSensor) {			
+				SensorR = canData[2];
+				SensorL = canData[0];
+				SensorF = canData[3];
+			
+			#if DEBUG
+				ST7735_Message(0,0,"IR0: ", canData[0]);
+				ST7735_Message(0,1,"IR1: ", canData[1]);
+				ST7735_Message(0,2,"IR2: ", canData[2]);
+				ST7735_Message(0,3,"IR3: ", canData[3]);
+			#endif
+			
+				RightAngle = (unsigned char) (myatan((double)SensorR / (double)SensorF)*180/3.14 + 0.5);
+
+		} else if(receiveID == PingSensor) {
+				SensorFR = canData[0];
+				
+			#if DEBUG
+				ST7735_Message(1,0, "Ping0: ", canData[0]);
+				ST7735_Message(1,1, "Ping1: ", canData[1]);
+				ST7735_Message(1,2, "Ping2: ", canData[2]);
+				ST7735_Message(1,3, "Ping3: ", canData[3]);
+			#endif
+				
+		}
+	}
+}
+
+#define INC_STEP  3000
+static void IncrementalController( long ref,  long *curr) {
+	if (*curr > ref + INC_STEP ) {
+		  *curr -= INC_STEP;
+	} else if (*curr < ref - INC_STEP) {
+			*curr += INC_STEP;
+	} else *curr = ref;
+}
+
 int main(void) {
   PLL_Init();
   
@@ -143,8 +145,7 @@ int main(void) {
   ST7735_FillScreen(0); // set screen to black
 
 	/*********************************************/Debug_LED_Init();
-	
-  //OS_InitSemaphore(&Sema4UART, 1);
+
   OS_Init();
   
   NumCreated = 0;

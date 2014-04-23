@@ -22,7 +22,7 @@ typedef struct Sema4 Sema4Type;
 
 /************ Options for Applying Performance Measurement ****************/
 
-#define __Performance_Measurement__  // Main option, disables this will remove all performance measurement
+//#define __Performance_Measurement__  // Main option, disables this will remove all performance measurement
 
 #ifdef __Performance_Measurement__
 	#define __Jitter_Measurement__

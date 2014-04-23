@@ -897,7 +897,8 @@ void SysTick_Handler(void) { long sr;
 	timestamp(Profile_SysTick_Starts);
 	#endif
 	
-	NextPt = RunPt->next;
+//	NextPt = RunPt->next;
+	updateNextPt(0);
 	NVIC_INT_CTRL_R |= NVIC_INT_CTRL_PEND_SV; // PendSV 	
 
 	#ifdef __Profiling__

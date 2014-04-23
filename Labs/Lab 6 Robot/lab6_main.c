@@ -34,13 +34,15 @@ static long CurrentSpeed1 = 0;
 static long RefSpeed0 = 0;
 static long RefSpeed1 = 0;
 
-unsigned char SensorF, SensorR, SensorL, SensorFR, SensorLR, RightAngle;
+unsigned char SensorF, SensorR, SensorL, SensorFR, SensorFL, RightAngle;
 
 // Function implementing an incremental controller
 static void IncrementalController( long ref,  long *curr);
+typedef enum State_t {GoForward, TurnRight, TurnLeft, Stop
+} State;
 
 void Controller(void) {
-	
+	static State currentState = GoForward;
 	#if !DEBUG
 
 	static int i = 0;
@@ -55,26 +57,61 @@ void Controller(void) {
 	}
 	#endif
 	
-	#define Fast_Speed  18000
+	#define Fast_Speed  12000
 	#define Slow_Speed  12000
-	#define Steering    500
+	#define Steering_Turn    300
+	#define Steering_Forward   50;
+	#define BASE_TURN			1000;
 	
-	if (SensorF >= 100) {
-		RefSpeed0 = RefSpeed1 = Fast_Speed;
-	} else if (SensorF >= 50) {
-		RefSpeed0 = RefSpeed1 = Slow_Speed;
-	} else {
-		if (SensorR >= 50) {    //Front is block, right is free
-					RefSpeed0 = 12000 - (50-SensorF)*Steering;
-					if (RefSpeed0 & 0x80000000) {
-						RefSpeed0 = 0;
-					}
-					RefSpeed1 = 12000;
-		} else {
-			RefSpeed1 = 12000;
-			RefSpeed0 = 12000 + RightAngle*50;
+	#define FRONT_THRESH 20
+	#define SIDE_THRESH 50
+	switch(currentState) {
+		case GoForward:
+			RefSpeed1 = Fast_Speed;
+			RefSpeed0 = Fast_Speed + ((long) SensorL - (long) SensorR) * Steering_Forward;
 			if (RefSpeed0 > 25000) RefSpeed0 = 25000;
-		}
+			if (RefSpeed0 < 0) RefSpeed0 = 0;
+			if (SensorF<FRONT_THRESH) {
+				if (SensorR > SIDE_THRESH) { currentState=TurnRight; break; }
+				if (SensorL > SIDE_THRESH) { currentState=TurnLeft; break; }
+				currentState = Stop; break;
+			}
+			break;
+		case TurnRight:
+			//RefSpeed1 = Slow_Speed;
+			//RefSpeed0 = Slow_Speed - (FRONT_THRESH-SensorF)*Steering_Turn;
+			//RefSpeed0 = Slow_Speed - 6000;
+//			i
+		
+			RefSpeed0 = -BASE_TURN;
+			RefSpeed1 = BASE_TURN;
+			if (SensorF>FRONT_THRESH) {
+				currentState = GoForward; break;
+			}
+			break;
+		case TurnLeft:
+//			RefSpeed1 = Slow_Speed;
+//			RefSpeed0 = Slow_Speed + (FRONT_THRESH-SensorF)*Steering_Turn;
+//			RefSpeed0 = Slow_Speed + 6000;		
+//			if (RefSpeed0 > 25000) RefSpeed0 = 25000;
+//			if (RefSpeed0 < 0) {
+//				RefSpeed0 = 0;
+//			}
+			RefSpeed0 = +BASE_TURN;
+			RefSpeed1 = -BASE_TURN;
+			if (SensorF>FRONT_THRESH) {
+				currentState = GoForward; break;
+			}
+			break;
+		case Stop:
+			RefSpeed0 = RefSpeed1 = 0;
+			if (SensorF<FRONT_THRESH) {
+				if (SensorR > SIDE_THRESH) { currentState=TurnRight; break; }
+				if (SensorL > SIDE_THRESH) { currentState=TurnLeft; break; }
+			} else {
+				currentState = GoForward;
+			}
+			break;
 	}
 	
 	if (CurrentSpeed1 == RefSpeed1) {
@@ -83,7 +120,7 @@ void Controller(void) {
 		IncrementalController(RefSpeed1, &CurrentSpeed1);
 		CurrentSpeed0 = CurrentSpeed1;
 	}
-	Motor_MotionUpdate(CurrentSpeed0, CurrentSpeed1, 1);
+	Motor_MotionUpdate(CurrentSpeed0, CurrentSpeed1);
 }
 
 
@@ -101,9 +138,9 @@ static void NetworkReceive(void) {
 		/******************************************/Debug_LED_heartbeat();
 		
 		if (receiveID == IRSensor) {			
-				SensorR = canData[2];
-				SensorL = canData[0];
 				SensorF = canData[3];
+				SensorFL = canData[2];
+				SensorFR = canData[0];
 			
 			#if DEBUG
 				ST7735_Message(0,0,"IR0: ", canData[0]);
@@ -115,7 +152,8 @@ static void NetworkReceive(void) {
 				RightAngle = (unsigned char) (myatan((double)SensorR / (double)SensorF)*180/3.14 + 0.5);
 
 		} else if(receiveID == PingSensor) {
-				SensorFR = canData[0];
+				SensorL = canData[0];
+				SensorR = canData[1];
 				
 			#if DEBUG
 				ST7735_Message(1,0, "Ping0: ", canData[0]);
@@ -235,3 +273,21 @@ int main(void) {
 }
 
 #endif
+
+	/*if (SensorF >= 100) {
+		RefSpeed0 = RefSpeed1 = Fast_Speed;
+	} else if (SensorF >= 50) {
+		RefSpeed0 = RefSpeed1 = Slow_Speed;
+	} else {
+		if (SensorR >= 50) {    //Front is block, right is free
+					RefSpeed0 = 12000 - (50-SensorF)*Steering;
+					if (RefSpeed0 & 0x80000000) {
+						RefSpeed0 = 0;
+					}
+					RefSpeed1 = 12000;
+		} else {
+			RefSpeed1 = 12000;
+			RefSpeed0 = 12000 + RightAngle*50;
+			if (RefSpeed0 > 25000) RefSpeed0 = 25000;
+		}
+	}*/

@@ -49,13 +49,11 @@
 #include "can0.h"
 #include "inc/tm4c123gh6pm.h"
 
-
-
 #define NULL 0
-// reverse these IDs on the other microcontroller
+
+#if CAN // Receiver
 
 // FIFO linkage from background to foreground
-
 // Two-index implementation of the transmit FIFO
 // can hold 0 to TXFIFOSIZE elements
 #define RCVFIFOSIZE    16 // must be a power of 2
@@ -68,6 +66,8 @@ typedef struct {
 } RCVPacket;
 
 AddIndexFifo(RCV,RCVFIFOSIZE,RCVPacket,RCVFIFOSUCCESS,RCVFIFOFAIL)
+
+#endif
 
 //*****************************************************************************
 //
@@ -119,9 +119,12 @@ void static CAN0_Setup_Message_Object( unsigned long MessageID, \
 }
 // Initialize CAN port
 void CAN0_Open(void){unsigned long volatile delay; 
-
+  
+  #if CAN // Receiver
 	RCVFifo_Init();
-	OS_InitSemaphore(&Sema4CAN, 0);
+  #endif
+  
+  OS_InitSemaphore(&Sema4CAN, 0);
 	
   SYSCTL_RCGCCAN_R |= 0x00000001;  // CAN0 enable bit 0
   SYSCTL_RCGCGPIO_R |= 0x00000010;  // RCGC2 portE bit 4
@@ -142,15 +145,13 @@ void CAN0_Open(void){unsigned long volatile delay;
   //CAN0_Setup_Message_Object(RCV_ID, MSG_OBJ_RX_INT_ENABLE, 4, NULL, RCV_ID, MSG_OBJ_TYPE_RX);
   CAN0_Setup_Message_Object((unsigned long) (IRSensor), MSG_OBJ_RX_INT_ENABLE, 4, NULL, (unsigned long) (IRSensor), MSG_OBJ_TYPE_RX);
   CAN0_Setup_Message_Object((unsigned long) (PingSensor), MSG_OBJ_RX_INT_ENABLE, 4, NULL, (unsigned long) (PingSensor), MSG_OBJ_TYPE_RX);
+  
   NVIC_EN1_R = (1 << (INT_CAN0 - 48)); //IntEnable(INT_CAN0);
+  
   return;
 }
 
-// send 4 bytes of data to other microcontroller 
-void CAN0_SendData(PackageID sendID, unsigned char data[4]){
-// in this case there is just one type, but you could accept multiple ID types
-  CAN0_Setup_Message_Object((unsigned long) sendID, NULL, 4, data, (unsigned long) sendID, MSG_OBJ_TYPE_TX);
-}
+#if CAN // Receiver
 
 // if receive data is ready, gets the data 
 // if no receive data is ready, it waits until it is ready
@@ -166,3 +167,12 @@ void CAN0_GetMail(PackageID *receiveID, unsigned char data[4]){
 		data[3] = get.RCVData[3];
 }
 
+#else // Transmitter
+
+// send 4 bytes of data to other microcontroller 
+void CAN0_SendData(PackageID sendID, unsigned char data[4]){
+// in this case there is just one type, but you could accept multiple ID types
+  CAN0_Setup_Message_Object((unsigned long) sendID, NULL, 4, data, (unsigned long) sendID, MSG_OBJ_TYPE_TX);
+}
+
+#endif

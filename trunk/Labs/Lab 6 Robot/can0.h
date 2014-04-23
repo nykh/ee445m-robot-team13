@@ -30,9 +30,15 @@
 #define __CAN0_H__
 #define CAN_BITRATE             500000
 
+#define CAN    0 //1 = receiver, 0 = transmitter
 // reverse these IDs on the other microcontroller
-#define RCV_ID 4
-#define XMT_ID 2
+#if CAN
+	#define RCV_ID 4
+	#define XMT_ID 2
+#else
+	#define RCV_ID 2
+	#define XMT_ID 4
+#endif
 
 // 11 bit
 typedef enum PackageID_t {
@@ -40,26 +46,21 @@ typedef enum PackageID_t {
 	PingSensor = 2,
 	Motors = 3,
 } PackageID;
+// Initialize CAN port
+void CAN0_Open(void);
 
-// Returns true if receive data is available
-//         false if no receive data ready
-int CAN0_CheckMail(void);
-
-// if receive data is ready, gets the data and returns true
-// if no receive data is ready, returns false
-int CAN0_GetMailNonBlock(unsigned char data[4]);
+#if CAN // Receiver
 
 // if receive data is ready, gets the data 
 // if no receive data is ready, it waits until it is ready
 void CAN0_GetMail(PackageID *receiveID, unsigned char data[4]);
 
-// Initialize CAN port
-void CAN0_Open(void);
+#else // Transmitter
 
 // send 4 bytes of data to other microcontroller 
 void CAN0_SendData(PackageID sendID, unsigned char data[4]);
 
-
+#endif
 
 #endif //  __CAN0_H__
 

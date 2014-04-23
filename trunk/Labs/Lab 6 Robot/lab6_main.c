@@ -39,10 +39,13 @@ unsigned char SensorF, SensorR, SensorL, SensorFR, SensorFL, RightAngle;
 
 // Function implementing an incremental controller
 static void IncrementalController( long ref,  long *curr);
-typedef enum State_t {GoForward, TurnRight, TurnLeft, Stop} State;
+typedef enum State_t {
+	GoForward, TurnRight, TurnLeft, Stop
+} State;
 
 void Controller(void) {
 	static State currentState = GoForward;
+
 	
 	#if   DEBUG_LCD
 	#if !DEBUG

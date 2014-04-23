@@ -12,7 +12,6 @@
 
 // Commands come from these sources
 #include "heap2.h"
-#include "heap_debug.h"
 
 //ASCII codes for keyboard inputs
 #define BACKSPACE               0x08  // back up one character

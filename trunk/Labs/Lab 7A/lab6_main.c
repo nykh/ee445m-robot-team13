@@ -43,8 +43,8 @@ void NetworkReceive(void) {
 			case IRSensor0:
 				sensor1 = ((unsigned short *)canData)[0];
 				ST7735_Message(0,0,"IR0: ", sensor1);
-				if (sensor1 > 800) {
-					RefSpeed0 = 12000 - (sensor1-800)*40;
+				if (sensor1 > 600) {
+					RefSpeed0 = 12000 - (sensor1-600)*60;
 					if (RefSpeed0 & 0x80000000) {
 						RefSpeed0 = 0;
 					}
@@ -58,7 +58,7 @@ void NetworkReceive(void) {
 			break;
 			default:
 			break;
-		}
+		} 
 	}
 }
 

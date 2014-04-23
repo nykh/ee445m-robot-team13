@@ -49,6 +49,6 @@ void Motor_Init(unsigned short duty);
 void Motor_0_MotionUpdate(unsigned long duty, unsigned char direction);
 void Motor_1_MotionUpdate(unsigned long duty, unsigned char direction);
 
-void Motor_MotionUpdate(unsigned long duty0, unsigned long duty1, unsigned char direction);
+void Motor_MotionUpdate(long duty0, long duty1);
 
 #endif // __MOTOR_H__

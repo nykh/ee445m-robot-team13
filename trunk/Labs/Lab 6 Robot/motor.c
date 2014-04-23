@@ -116,7 +116,8 @@ void Motor_MotionUpdate(long duty0, long duty1){
 	if (duty0>PERIOD-2) duty0 = PERIOD -2;
 	if (duty1<2) duty1 = 2;
 	if (duty1>PERIOD-2) duty1 = PERIOD -2;
-	
+
 	PWM0_0_CMPA_R = (dir0)? (PERIOD - duty0):(duty0);
 	PWM0_1_CMPA_R = (dir1)? (PERIOD - duty1):(duty1);
+	
 }

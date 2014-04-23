@@ -96,7 +96,7 @@ void CAN0_Handler(void){ unsigned char data[4];
 				
 				RCVFifo_Put(newpacket);
 				
-				OS_bSignal(&Sema4CAN);
+				OS_Signal(&Sema4CAN);
       }
     }
   }
@@ -157,13 +157,12 @@ void CAN0_SendData(PackageID sendID, unsigned char data[4]){
 void CAN0_GetMail(PackageID *receiveID, unsigned char data[4]){
 	RCVPacket get;
 	
-  OS_bWait(&Sema4CAN);
-	if(RCVFifo_Get(&get)) {
+  OS_Wait(&Sema4CAN);
+	RCVFifo_Get(&get);
 		*receiveID = get.RCVID;
 		data[0] = get.RCVData[0];
 		data[1] = get.RCVData[1];
 		data[2] = get.RCVData[2];
 		data[3] = get.RCVData[3];
-	}
 }
 

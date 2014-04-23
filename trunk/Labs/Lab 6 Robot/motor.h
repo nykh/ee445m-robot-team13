@@ -29,7 +29,7 @@
 
 #define Carpet_Floor  1
 #define Smooth_Floor  2
-#define Floor         Smooth_Floor
+#define Floor         Carpet_Floor
 
 #if Floor == Carpet_Floor
 #define MOTOR_DIFF   750

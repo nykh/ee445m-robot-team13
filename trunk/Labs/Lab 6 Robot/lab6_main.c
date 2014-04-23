@@ -27,6 +27,7 @@ unsigned int NumCreated;
 
 #if MAIN  /******************** Motor Control side *******************/
 
+#define DEBUG_LCD 1
 #define DEBUG  0
 
 static long CurrentSpeed0 = 0;
@@ -38,13 +39,13 @@ unsigned char SensorF, SensorR, SensorL, SensorFR, SensorFL, RightAngle;
 
 // Function implementing an incremental controller
 static void IncrementalController( long ref,  long *curr);
-typedef enum State_t {GoForward, TurnRight, TurnLeft, Stop
-} State;
+typedef enum State_t {GoForward, TurnRight, TurnLeft, Stop} State;
 
 void Controller(void) {
 	static State currentState = GoForward;
+	
+	#if   DEBUG_LCD
 	#if !DEBUG
-
 	static int i = 0;
 	i = (i+1)&0x7;
 	switch(i) {
@@ -56,24 +57,41 @@ void Controller(void) {
 		case 5:	ST7735_Message(1,2, "FroRight: ", SensorFR);			
 	}
 	#endif
+	#endif
 	
-	#define Fast_Speed  12000
+	#define Fast_Speed  15000
 	#define Slow_Speed  12000
-	#define Steering_Turn    300
-	#define Steering_Forward   50;
-	#define BASE_TURN			1000;
+	#define Steering_Turn    150
+	#define Steering_Forward   50
+	#define BASE_TURN			6000
 	
-	#define FRONT_THRESH 20
-	#define SIDE_THRESH 50
+	#define FRONT_THRESH 30
+	#define SIDE_THRESH 30
+	//currentState=TurnLeft;
 	switch(currentState) {
 		case GoForward:
 			RefSpeed1 = Fast_Speed;
-			RefSpeed0 = Fast_Speed + ((long) SensorL - (long) SensorR) * Steering_Forward;
+//			if (SensorL > 50) {
+//				RefSpeed0 = Fast_Speed + ( 30 - (long) SensorR) * Steering_Forward \
+//															 + ( 42 - (long) SensorFL) * Steering_Forward;
+//			} else if (SensorR > 50) {
+//				RefSpeed0 = Fast_Speed + ( (long) SensorL - 30) * Steering_Forward	\
+//															 + ( (long) SensorL - 42) * Steering_Forward;
+//			} else {
+//				RefSpeed0 = Fast_Speed + ((long) SensorL - (long) SensorR) * Steering_Forward \
+//															 + ((long) SensorFL - (long) SensorFR) * Steering_Forward;
+//			}
+			RefSpeed0 = Fast_Speed + ( 30 - (long) SensorR) * Steering_Forward \
+															 + ( 42 - (long) SensorFL) * Steering_Forward;
+			if (RefSpeed1 == CurrentSpeed1) {
+				IncrementalController(RefSpeed0, &CurrentSpeed0);
+			} else {
+				IncrementalController(RefSpeed1, &CurrentSpeed1);
+				CurrentSpeed0 = CurrentSpeed1;
+			}
 			if (RefSpeed0 > 25000) RefSpeed0 = 25000;
 			if (RefSpeed0 < 0) RefSpeed0 = 0;
 			if (SensorF<FRONT_THRESH) {
-				if (SensorR > SIDE_THRESH) { currentState=TurnRight; break; }
-				if (SensorL > SIDE_THRESH) { currentState=TurnLeft; break; }
 				currentState = Stop; break;
 			}
 			break;
@@ -83,8 +101,10 @@ void Controller(void) {
 			//RefSpeed0 = Slow_Speed - 6000;
 //			i
 		
-			RefSpeed0 = -BASE_TURN;
-			RefSpeed1 = BASE_TURN;
+			RefSpeed0 = -BASE_TURN + 2000;
+			RefSpeed1 = BASE_TURN + 2000;
+			IncrementalController(RefSpeed0, &CurrentSpeed0);
+			IncrementalController(RefSpeed1, &CurrentSpeed1);
 			if (SensorF>FRONT_THRESH) {
 				currentState = GoForward; break;
 			}
@@ -98,28 +118,36 @@ void Controller(void) {
 //				RefSpeed0 = 0;
 //			}
 			RefSpeed0 = +BASE_TURN;
-			RefSpeed1 = -BASE_TURN;
+			RefSpeed1 = -BASE_TURN - 1500;
+			IncrementalController(RefSpeed0, &CurrentSpeed0);
+			IncrementalController(RefSpeed1, &CurrentSpeed1);
 			if (SensorF>FRONT_THRESH) {
 				currentState = GoForward; break;
 			}
 			break;
 		case Stop:
 			RefSpeed0 = RefSpeed1 = 0;
-			if (SensorF<FRONT_THRESH) {
-				if (SensorR > SIDE_THRESH) { currentState=TurnRight; break; }
-				if (SensorL > SIDE_THRESH) { currentState=TurnLeft; break; }
-			} else {
-				currentState = GoForward;
+			IncrementalController(RefSpeed0, &CurrentSpeed0);
+			CurrentSpeed1 = CurrentSpeed0;
+		  if ( (CurrentSpeed0 == CurrentSpeed1) && (CurrentSpeed0 == 0) ){
+				if (SensorF<FRONT_THRESH) {
+					if ((SensorR > SIDE_THRESH) &&  (SensorL > SIDE_THRESH) ) {
+						if (SensorR>SensorL) {
+							 currentState=TurnRight; break; 
+						} else {
+							currentState=TurnLeft; break; 
+						}
+					}
+					if (SensorR > SIDE_THRESH) { currentState=TurnRight; break; }
+					if (SensorL > SIDE_THRESH) { currentState=TurnLeft; break; }
+				} else {
+					currentState = GoForward;
+				}
 			}
 			break;
 	}
 	
-	if (CurrentSpeed1 == RefSpeed1) {
-		IncrementalController(RefSpeed0, &CurrentSpeed0);
-	} else {
-		IncrementalController(RefSpeed1, &CurrentSpeed1);
-		CurrentSpeed0 = CurrentSpeed1;
-	}
+	//Motor_MotionUpdate(Fast_Speed, Fast_Speed);
 	Motor_MotionUpdate(CurrentSpeed0, CurrentSpeed1);
 }
 
@@ -142,11 +170,13 @@ static void NetworkReceive(void) {
 				SensorFL = canData[2];
 				SensorFR = canData[0];
 			
+			#if   DEBUG_LCD
 			#if DEBUG
 				ST7735_Message(0,0,"IR0: ", canData[0]);
 				ST7735_Message(0,1,"IR1: ", canData[1]);
 				ST7735_Message(0,2,"IR2: ", canData[2]);
 				ST7735_Message(0,3,"IR3: ", canData[3]);
+			#endif
 			#endif
 			
 				RightAngle = (unsigned char) (myatan((double)SensorR / (double)SensorF)*180/3.14 + 0.5);
@@ -155,11 +185,13 @@ static void NetworkReceive(void) {
 				SensorL = canData[0];
 				SensorR = canData[1];
 				
+			#if   DEBUG_LCD
 			#if DEBUG
 				ST7735_Message(1,0, "Ping0: ", canData[0]);
 				ST7735_Message(1,1, "Ping1: ", canData[1]);
 				ST7735_Message(1,2, "Ping2: ", canData[2]);
 				ST7735_Message(1,3, "Ping3: ", canData[3]);
+			#endif
 			#endif
 				
 		}
@@ -178,9 +210,11 @@ static void IncrementalController( long ref,  long *curr) {
 int main(void) {
   PLL_Init();
   
+	#if   DEBUG_LCD
   ST7735_InitR(INITR_REDTAB);
 	ST7735_SetRotation(1);
   ST7735_FillScreen(0); // set screen to black
+	#endif
 
 	/*********************************************/Debug_LED_Init();
 

@@ -39,7 +39,7 @@ unsigned char SensorF, SensorR, SensorL, SensorFR, SensorFL, RightAngle;
 
 // Function implementing an incremental controller
 static void IncrementalController( long ref,  long *curr);
-typedef enum State_t {GoForward, TurnRight, TurnLeft, Stop} State;
+typedef enum State_t {GoForward, TurnRight, TurnLeft, Stop, SteerRight, SteerLeft} State;
 
 void Controller(void) {
 	static State currentState = GoForward;
@@ -63,29 +63,37 @@ void Controller(void) {
 	#define Fast_Speed  18000
 	#define Slow_Speed  14000
 	#define Steering_Turn    150
-	#define Steering_Forward   20
+	#define Steering_Forward_P   30
+	#define Steering_Forward_I   10
+	#define Steering_Forward_I_CAP  1000
 	#define BASE_TURN			8000
 	
 	#define FRONT_THRESH 35
 	#define SIDE_THRESH 30
 	//currentState=TurnLeft;
 	switch(currentState) {
+		long error;
+		static long integrated_error = 0;
 		case GoForward:
 			RefSpeedL = Fast_Speed;
-			if (SensorL > SIDE_THRESH+10) {
-				RefSpeedR = Fast_Speed + ( 30 - (long) SensorR) * Steering_Forward \
-															 + ( 45 - (long) SensorFR) * Steering_Forward;
-			} else if (SensorR > SIDE_THRESH+10) {
-				RefSpeedR = Fast_Speed + ( (long) SensorL - 30) * Steering_Forward	\
-															 + ( (long) SensorL - 45) * Steering_Forward;
-			} else {
-				RefSpeedR = Fast_Speed + ((long) SensorL - (long) SensorR) * Steering_Forward \
-															 + ((long) SensorFL - (long) SensorFR) * Steering_Forward;
-			}
-			RefSpeedR = Fast_Speed + ((long) SensorL - (long) SensorR) * Steering_Forward \
-															 + ((long) SensorFL - (long) SensorFR) * Steering_Forward;
-			if (RefSpeedR > Fast_Speed + 3000) RefSpeedR = Fast_Speed + 3000;
-			if (RefSpeedR <Fast_Speed - 3000) RefSpeedR = Fast_Speed - 3000;
+//			if (SensorL > SIDE_THRESH+10) {
+//				RefSpeedR = Fast_Speed + ( 30 - (long) SensorR) * Steering_Forward_P \
+//															 + ( 45 - (long) SensorFR) * Steering_Forward_P;
+//			} else if (SensorR > SIDE_THRESH+10) {
+//				RefSpeedR = Fast_Speed + ( (long) SensorL - 30) * Steering_Forward_P	\
+//															 + ( (long) SensorL - 45) * Steering_Forward_P;
+//			} else {
+//				RefSpeedR = Fast_Speed + ((long) SensorL - (long) SensorR) * Steering_Forward_P \
+//															 + ((long) SensorFL - (long) SensorFR) * Steering_Forward_P;
+//			}
+			error = ((long) SensorL - (long) SensorR) + ((long) SensorFL - (long) SensorFR);
+			integrated_error += error;
+			if (error > Steering_Forward_I_CAP) error = Steering_Forward_I_CAP;
+			if (error < -Steering_Forward_I_CAP) error = -Steering_Forward_I_CAP;
+		
+			RefSpeedR = Fast_Speed + error * Steering_Forward_P + integrated_error / Steering_Forward_I;
+			if (RefSpeedR > Fast_Speed + 6000) RefSpeedR = Fast_Speed + 6000;
+			if (RefSpeedR <Fast_Speed - 6000) RefSpeedR = Fast_Speed - 6000;
 			
 			if (RefSpeedL == CurrentSpeedL) {
 				IncrementalController(RefSpeedR, &CurrentSpeedR);
@@ -96,8 +104,15 @@ void Controller(void) {
 			
 			if (RefSpeedR > 25000) RefSpeedR = 25000;
 			if (RefSpeedR < 0) RefSpeedR = 0;
+			
 			if (SensorF<FRONT_THRESH) {
 				currentState = Stop; break;
+			}
+			if (SensorL >= 50) {
+				currentState = SteerLeft; break;
+			}
+			if (SensorR >= 50) {
+				currentState = SteerRight; break;
 			}
 			break;
 		case TurnRight:
@@ -151,6 +166,31 @@ void Controller(void) {
 				currentState = GoForward;
 				}
 			} 
+			break;
+		case SteerRight: 
+			RefSpeedR = Slow_Speed-6000;
+			RefSpeedL = Slow_Speed;
+			if (RefSpeedL == Slow_Speed) {
+				IncrementalController(RefSpeedR, &CurrentSpeedR);
+			} else {
+				IncrementalController(RefSpeedL, &CurrentSpeedL);
+				CurrentSpeedR = CurrentSpeedL;
+			}
+			if (SensorF >= FRONT_THRESH+20) currentState = GoForward;
+			if (SensorF <FRONT_THRESH) currentState = Stop;
+			break;
+		case SteerLeft: 
+			RefSpeedR = Slow_Speed;
+			RefSpeedL = Slow_Speed-6000;
+			if (RefSpeedR == Slow_Speed) {
+				IncrementalController(RefSpeedL, &CurrentSpeedL);
+			} else {
+				IncrementalController(RefSpeedR, &CurrentSpeedR);
+				CurrentSpeedL = CurrentSpeedR;
+			}
+			if (SensorF >= FRONT_THRESH+20) currentState = GoForward;
+			if (SensorF <FRONT_THRESH) currentState = Stop;
+			break;
 			break;
 	}
 	
@@ -230,7 +270,7 @@ int main(void) {
   NumCreated = 0;
   //NumCreated += OS_AddThread(&Interpreter,128,1); 
   NumCreated += OS_AddThread(&NetworkReceive,128,1); 
-  NumCreated += OS_AddPeriodicThread(&Controller, 100*TIME_1MS, 3); 
+  NumCreated += OS_AddPeriodicThread(&Controller, 50*TIME_1MS, 3); 
   
   OS_Launch(TIMESLICE);
 }

@@ -44,7 +44,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\</OutputDirectory>
-          <OutputName>Lab_6</OutputName>
+          <OutputName>Lab_7</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>0</CreateHexFile>
@@ -468,11 +468,6 @@
               <FilePath>.\ir_sensor.c</FilePath>
             </File>
             <File>
-              <FileName>lab6_main.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\lab6_main.c</FilePath>
-            </File>
-            <File>
               <FileName>Ping.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Ping.c</FilePath>
@@ -491,6 +486,11 @@
               <FileName>atan.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\atan.c</FilePath>
+            </File>
+            <File>
+              <FileName>lab7_main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lab7_main.c</FilePath>
             </File>
           </Files>
         </Group>

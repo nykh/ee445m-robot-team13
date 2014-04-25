@@ -16,7 +16,7 @@
 #define SAMPLING_RATE 2000
 #define TIMESLICE 2*TIME_1MS  // thread switch time in system time units
 
-#define MAIN 0		//1 = receiver, 0 = transmitter
+#define MAIN 1		//1 = receiver, 0 = transmitter
 
 /************************ Debug info ***********************/
 unsigned int NumCreated;
@@ -48,20 +48,19 @@ void Controller(void) {
 	#if   DEBUG_LCD
 	#if !DEBUG
 	static int i = 0;
-	i = (i+1)&0x7;
+	i = (i+1)&0xF;
 	switch(i) {
 		case 0: ST7735_Message(1,0, "Front IR: ", SensorF); break;
-		case 1: ST7735_Message(1,1, "Front Pg: ", SensorFPing); break;
-		case 2:	ST7735_Message(1,2, "FroR: ", SensorFR);
-		case 3:	ST7735_Message(1,3, "FroL: ", SensorFL);	
+		case 2: ST7735_Message(1,1, "Front Pg: ", SensorFPing); break;
+		case 4:	ST7735_Message(1,2, "FroR: ", SensorFR);
+		case 6:	ST7735_Message(1,3, "FroL: ", SensorFL);	
 		
-		case 4:	ST7735_Message(0,0, "Right: ", SensorR);
-		case 5:	ST7735_Message(0,1, "Left : ", SensorL);
+		case 8:	ST7735_Message(0,0, "Right: ", SensorR);
+		case 10:	ST7735_Message(0,1, "Left : ", SensorL);
 		
-		// case 4: /*ST7735_Message(0,0, "Speed0: ", (unsigned long) RefSpeedR);*/ break;
-		// case 5: /*ST7735_Message(0,1, "Speed1: ", (unsigned long) RefSpeedL);*/ break;
-		case 6: ST7735_Message(0,2, "Error: ", (long) error); break;
-		case 7: ST7735_Message(0,3, "Front: ", (unsigned long) calculated_front); break;
+		case 14: ST7735_Message(0,6, "Speed0: ", (unsigned long) RefSpeedR); break;
+		case 1: ST7735_Message(0,7, "Speed1: ", (unsigned long) RefSpeedL); break;
+		case 12: ST7735_Message(0,2, "Error: ", (long) error); break;
 	}
 	#endif
 	#endif
@@ -69,12 +68,12 @@ void Controller(void) {
 	#define Fast_Speed  24000
 	#define Slow_Speed  12000
 	#define Steer_Diff  2000
-	#define Steering_Forward_P   60
-	#define Steering_Forward_I   8 // Smaller = I term greater
-	#define Sterring_Integral_Capacity 1000
+	#define Steering_Forward_P   80
+	#define Steering_Forward_I   50 // Smaller = I term greater
+	#define Sterring_Integral_Capacity 2000
 	#define Turn_Speed	8000
 	
-	#define F_Go2Stop_THRS   50
+	#define F_Go2Stop_THRS   40
 	#define F_Turn2Go_THRS   F_Go2Stop_THRS+5
 	#define F_Go2Steer_THRS  50
 	#define F_Steer2Go_THRS  F_Go2Steer_THRS+15
@@ -83,6 +82,7 @@ void Controller(void) {
 	#define FRONT            SensorF
 	
 	//currentState=TurnLeft;
+	//currentState = GoForward;
 	switch(currentState) {
 		static long integrated_error = 0;
 		
@@ -93,7 +93,7 @@ void Controller(void) {
 		
 		// + > biasing to right
 		// - < biasing to left
-		  error = (8*((long) SensorL - (long) SensorR) + 0*((long) SensorFL - (long) SensorFR))/8;
+		  error = (3*((long) SensorL - (long) SensorR) + 1*((long) SensorFL - (long) SensorFR))/4;
 		// By practical observation: the value of error is in the range [-255, 255]
 
 			integrated_error += error;
@@ -103,7 +103,7 @@ void Controller(void) {
 			if (error > 0 ) {
 				RefSpeedL -= error * Steering_Forward_P + integrated_error / Steering_Forward_I;
 			} else {
-				RefSpeedR -= error * Steering_Forward_P + integrated_error / Steering_Forward_I;
+				RefSpeedR += error * Steering_Forward_P + integrated_error / Steering_Forward_I;
 			}
 			
 			if (RefSpeedR < Fast_Speed - 12000) RefSpeedR = Fast_Speed - 12000;
@@ -292,7 +292,7 @@ static void NetworkReceive(void) {
 	}
 }
 
-#define INC_STEP  2000
+#define INC_STEP  1000
 static void IncrementalController( long ref,  long *curr) {
 	if (*curr > ref + INC_STEP ) {
 		  *curr -= INC_STEP;
@@ -317,7 +317,7 @@ int main(void) {
   NumCreated = 0;
   //NumCreated += OS_AddThread(&Interpreter,128,1); 
   NumCreated += OS_AddThread(&NetworkReceive,128,1); 
-  NumCreated += OS_AddPeriodicThread(&Controller, 25*TIME_1MS, 3); 
+  NumCreated += OS_AddPeriodicThread(&Controller, 10*TIME_1MS, 3); 
   
   OS_Launch(TIMESLICE);
 }

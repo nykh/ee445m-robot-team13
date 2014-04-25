@@ -16,7 +16,7 @@
 #define SAMPLING_RATE 2000
 #define TIMESLICE 2*TIME_1MS  // thread switch time in system time units
 
-#define MAIN 1		//1 = receiver, 0 = transmitter
+#define MAIN 0		//1 = receiver, 0 = transmitter
 
 /************************ Debug info ***********************/
 unsigned int NumCreated;
@@ -69,14 +69,15 @@ void Controller(void) {
 	#define Fast_Speed  24000
 	#define Slow_Speed  12000
 	#define Steer_Diff  2000
-	#define Steering_Forward_P   30
+	#define Steering_Forward_P   60
 	#define Steering_Forward_I   8 // Smaller = I term greater
+	#define Sterring_Integral_Capacity 1000
 	#define Turn_Speed	8000
 	
-	#define F_Go2Stop_THRS   35
+	#define F_Go2Stop_THRS   50
 	#define F_Turn2Go_THRS   F_Go2Stop_THRS+5
-	#define F_Go2Steer_THRS  60
-	#define F_Steer2Go_THRS  F_Go2Stop_THRS+20
+	#define F_Go2Steer_THRS  50
+	#define F_Steer2Go_THRS  F_Go2Steer_THRS+15
 	#define S_Go2Steer_THRS  50
 	
 	#define FRONT            SensorF
@@ -88,25 +89,35 @@ void Controller(void) {
 		case GoForward:
 			/****************************************/ Debug_LED(RED);
 		
-			RefSpeedL = Fast_Speed;
+			RefSpeedL = RefSpeedR = Fast_Speed;
 		
 		// + > biasing to right
 		// - < biasing to left
-		  error = (7*((long) SensorL - (long) SensorR) + 1*((long) SensorFL - (long) SensorFR))/8;
+		  error = (8*((long) SensorL - (long) SensorR) + 0*((long) SensorFL - (long) SensorFR))/8;
 		// By practical observation: the value of error is in the range [-255, 255]
 
 			integrated_error += error;
+			if (integrated_error > Sterring_Integral_Capacity) integrated_error = Sterring_Integral_Capacity;
+			if (integrated_error < -Sterring_Integral_Capacity) integrated_error = -Sterring_Integral_Capacity;
 			
-			RefSpeedR = Fast_Speed + error * Steering_Forward_P + integrated_error / Steering_Forward_I;
-			
-			if (RefSpeedR > Fast_Speed + 6000) RefSpeedR = Fast_Speed + 6000;
-			if (RefSpeedR < Fast_Speed - 6000) RefSpeedR = Fast_Speed - 6000;
-			
-			if (CurrentSpeedL == RefSpeedL) {
-				IncrementalController(RefSpeedR, &CurrentSpeedR);
+			if (error > 0 ) {
+				RefSpeedL -= error * Steering_Forward_P + integrated_error / Steering_Forward_I;
 			} else {
+				RefSpeedR -= error * Steering_Forward_P + integrated_error / Steering_Forward_I;
+			}
+			
+			if (RefSpeedR < Fast_Speed - 12000) RefSpeedR = Fast_Speed - 12000;
+			if (RefSpeedL < Fast_Speed - 12000) RefSpeedL = Fast_Speed - 12000;
+			
+			if ( CurrentSpeedL < Fast_Speed - 6000) {
 				IncrementalController(RefSpeedL, &CurrentSpeedL);
 				CurrentSpeedR = CurrentSpeedL;
+			} else if ( CurrentSpeedR < Fast_Speed - 6000) {
+				IncrementalController(RefSpeedR, &CurrentSpeedR);
+				CurrentSpeedL = CurrentSpeedR;
+			} else {
+				IncrementalController(RefSpeedR, &CurrentSpeedR);
+				IncrementalController(RefSpeedL, &CurrentSpeedL);				
 			}
 			
 			// State change
@@ -118,7 +129,7 @@ void Controller(void) {
 			}
 			
 			// Normal : equal
-			if(FRONT < F_Go2Steer_THRS) {
+			/*if(FRONT < F_Go2Steer_THRS) {
 				if(SensorR > SensorL) {
 					if(SensorR >= S_Go2Steer_THRS) {
 						integrated_error = 0;
@@ -130,7 +141,7 @@ void Controller(void) {
 						currentState = SteerLeft;
 					}
 				}
-			}
+			}*/
 			break;
 			
 		case TurnRight:
@@ -281,7 +292,7 @@ static void NetworkReceive(void) {
 	}
 }
 
-#define INC_STEP  4000
+#define INC_STEP  2000
 static void IncrementalController( long ref,  long *curr) {
 	if (*curr > ref + INC_STEP ) {
 		  *curr -= INC_STEP;
@@ -306,7 +317,7 @@ int main(void) {
   NumCreated = 0;
   //NumCreated += OS_AddThread(&Interpreter,128,1); 
   NumCreated += OS_AddThread(&NetworkReceive,128,1); 
-  NumCreated += OS_AddPeriodicThread(&Controller, 50*TIME_1MS, 3); 
+  NumCreated += OS_AddPeriodicThread(&Controller, 25*TIME_1MS, 3); 
   
   OS_Launch(TIMESLICE);
 }
@@ -379,7 +390,7 @@ int main(void) {
   NumCreated = 0;
   //NumCreated += OS_AddThread(&Interpreter,128,1);
 	IR_Init(); 
-	NumCreated += OS_AddPeriodicThread(&NetworkSend, 50*TIME_1MS, 3); 
+	NumCreated += OS_AddPeriodicThread(&NetworkSend, 100*TIME_1MS, 3); 
 	NumCreated += OS_AddThread(&PingSensorSend, 128, 3);
 	
   

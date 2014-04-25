@@ -85,17 +85,17 @@ void CAN0_Handler(void){ unsigned char data[4];
     for(i = 0; i < 32; i++){    //test every bit of the mask
       if( (0x1 << i) & ulIDStatus){  // if active, get data
 				RCVPacket newpacket;
-				
+
 				CANMessageGet(CAN0_BASE, (i+1), &xTempMsgObject, true);
-				
+
 				newpacket.RCVID = (PackageID) xTempMsgObject.ulMsgID;
 				newpacket.RCVData[0] = data[0];
 				newpacket.RCVData[1] = data[1];
 				newpacket.RCVData[2] = data[2];
 				newpacket.RCVData[3] = data[3];
-				
+
 				RCVFifo_Put(newpacket);
-				
+
 				OS_Signal(&Sema4CAN);
       }
     }

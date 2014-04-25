@@ -15,26 +15,30 @@
 #include "OS.h"
 #include "semaphore.h"
 
-#define Sensors 			    (*((volatile unsigned long *)0x4000503C))
-#define PB3_0             0x0F
+//#define Sensors 			    (*((volatile unsigned long *)0x4000503C))
+//#define PB3_0             0x0F
+#define Sensors 			    (*((volatile unsigned long *)0x4000500C))
+#define PB3_0             0x03
 #define Temperature				20 
 #define NVIC_EN0_INT1			2
 
 #define TimeGap           5 // in 10 ms
 
-Sema4Type	Sema4PingResultAvailable[4], Sema4PingIdle;
+#define numSensor    2
+
+Sema4Type	Sema4PingResultAvailable[numSensor], Sema4PingIdle;
 long StartCritical (void);    // previous I bit, disable interrupts
 void EndCritical(long sr);    // restore I bit to previous value
 
 unsigned char PingNum=0;
 
 static unsigned long LastStatus;
-static unsigned long Starttime[4];
-static unsigned long Finishtime[4];
-static unsigned char Edge_Valid[4] = {0,}; // flag
+static unsigned long Starttime[numSensor];
+static unsigned long Finishtime[numSensor];
+static unsigned char Edge_Valid[numSensor] = {0,}; // flag
 
-static unsigned char Distance_Result[4];
-static unsigned char Sensor_fail[4] = {0,};
+static unsigned char Distance_Result[numSensor];
+static unsigned char Sensor_fail[numSensor] = {0,};
 
 static void Ping_measure(unsigned char number);
 
@@ -42,8 +46,8 @@ void Ping_Thread(void) {
 	while(1) {
 		Ping_measure(0);
 		Ping_measure(1);
-		Ping_measure(2);
-		Ping_measure(3);
+//		Ping_measure(2);
+//		Ping_measure(3);
 	}
 }
 
@@ -72,14 +76,14 @@ void Ping_Init(void){
   NVIC_PRI0_R = (NVIC_PRI0_R&0xFFFF00FF)|0x00004000; // (g) priority 2
   NVIC_EN0_R |= NVIC_EN0_INT1;  // (h) enable interrupt 1 in NVIC
 	
-  Edge_Valid[0] = Edge_Valid[1] = Edge_Valid[2] = Edge_Valid[3] = 0;
+  Edge_Valid[0] = Edge_Valid[1] /* = Edge_Valid[2] = Edge_Valid[3] */ = 0;
 	
 	OS_InitSemaphore(&Sema4PingIdle, 1);
 	
   OS_InitSemaphore(&Sema4PingResultAvailable[0], 0);
   OS_InitSemaphore(&Sema4PingResultAvailable[1], 0);
-  OS_InitSemaphore(&Sema4PingResultAvailable[2], 0);
-  OS_InitSemaphore(&Sema4PingResultAvailable[3], 0);
+//  OS_InitSemaphore(&Sema4PingResultAvailable[2], 0);
+//  OS_InitSemaphore(&Sema4PingResultAvailable[3], 0);
 	
   OS_AddThread(Ping_Thread, 128, 1);
 }

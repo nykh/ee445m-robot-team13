@@ -347,14 +347,9 @@ void NetworkSend(void) {
 	CanData[3] = pingValue[3];
 	CAN0_SendData(PingSensor, CanData);
 	// perform distance conversion
-	
-//		OS_bWait(&Sema4CAN);
-//		((unsigned short*)CanData)[0] = IRvalues[0];
-//		CAN0_SendData(IRSensor0, CanData);
-//	  OS_bSignal(&Sema4CAN);
 }
 
-unsigned long sensor_fail[4] = {0,};
+unsigned long sensor_fail[2] = {0,};
 
 void PingSensorSend(void) {
 //	unsigned char CanData[4];
@@ -365,14 +360,9 @@ void PingSensorSend(void) {
 		// may block
 		if(PingValue(&pingValue[0], 0)) sensor_fail[0]+=1;
 		if(PingValue(&pingValue[1], 1)) sensor_fail[1]+=1;
-		if(PingValue(&pingValue[2], 2)) sensor_fail[2]+=1;
-		if(PingValue(&pingValue[3], 3)) sensor_fail[3]+=1;
+//		if(PingValue(&pingValue[2], 2)) sensor_fail[2]+=1;
+//		if(PingValue(&pingValue[3], 3)) sensor_fail[3]+=1;
 	}
-	
-//		OS_bWait(&Sema4CAN);
-//		((unsigned long*)CanData)[0] = pingValue[pingNum];	
-//		CAN0_SendData(PingSensor | pingNum, CanData);
-//	  OS_bSignal(&Sema4CAN);
 }
 
 

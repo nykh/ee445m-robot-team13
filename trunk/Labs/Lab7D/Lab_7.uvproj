@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>Lab_6</TargetName>
+      <TargetName>Lab7D</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -45,7 +45,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\</OutputDirectory>
-          <OutputName>Lab_7</OutputName>
+          <OutputName>Lab7D</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>0</CreateHexFile>
@@ -487,11 +487,6 @@
               <FileName>heap2.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\heap2.c</FilePath>
-            </File>
-            <File>
-              <FileName>atan.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\atan.c</FilePath>
             </File>
             <File>
               <FileName>lab7_main.c</FileName>

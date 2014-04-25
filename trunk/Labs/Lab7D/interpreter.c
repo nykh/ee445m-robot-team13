@@ -244,8 +244,6 @@ static void parseLCDCommand () {
 //Input: None, though strtok must have been called to get the first token
 //Output: none
 static void parseMotorCommand(void) {
-	char* buffer; 
-	
 	puts("Not implemented.\r");
 }
 

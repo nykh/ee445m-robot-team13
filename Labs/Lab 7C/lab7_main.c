@@ -49,13 +49,13 @@ void Controller(void) {
 	static int i = 0;
 	i = (i+1)&0x7;
 	switch(i) {
-		case 0: ST7735_Message(1,1, "Front: ", SensorF); break;
-		case 1: ST7735_Message(1,0, "Right: ", SensorR); break;
-		case 2: ST7735_Message(1,3, "Left: ", SensorL); break;
-		case 3:	ST7735_Message(1,2, "FroRight: ", SensorFR);				
+		case 0: ST7735_Message(1,0, "Front: ", SensorF); break;
+		case 1: ST7735_Message(1,2, "Right: ", SensorR); break;
+		case 2: ST7735_Message(1,1, "Left: ", SensorL); break;
+		case 3:	ST7735_Message(1,3, "FroRight: ", SensorFR);
+		
 		case 4: ST7735_Message(0,0, "Speed0: ", (unsigned long) RefSpeedR); break;
 		case 5: ST7735_Message(0,1, "Speed1: ", (unsigned long) RefSpeedL); break;
-		case 6: ST7735_Message(0,2, "State: ", (unsigned long) currentState); break;
 	}
 	#endif
 	#endif
@@ -63,19 +63,29 @@ void Controller(void) {
 	#define Fast_Speed  18000
 	#define Slow_Speed  14000
 	#define Steering_Turn    150
+	#define Steer_Diff       3000
 	#define Steering_Forward_P   30
 	#define Steering_Forward_I   10
 	#define Steering_Forward_I_CAP  1000
 	#define BASE_TURN			8000
 	
-	#define FRONT_THRESH 35
-	#define SIDE_THRESH 30
+	#define F_Go2Stop_THRS   35
+	#define F_Turn2Go_THRS   F_Go2Stop_THRS+5
+	#define F_Go2Steer_THRS  60
+	#define F_Steer2Go_THRS  F_Go2Stop_THRS+20
+	#define SIDE_THRS        30
+	#define S_Go2Steer_THRS  50
+	
 	//currentState=TurnLeft;
 	switch(currentState) {
-		long error;
 		static long integrated_error = 0;
+		long error;
+		
 		case GoForward:
+			/****************************************/ Debug_LED(RED);
+		
 			RefSpeedL = Fast_Speed;
+		
 //			if (SensorL > SIDE_THRESH+10) {
 //				RefSpeedR = Fast_Speed + ( 30 - (long) SensorR) * Steering_Forward_P \
 //															 + ( 45 - (long) SensorFR) * Steering_Forward_P;
@@ -86,36 +96,59 @@ void Controller(void) {
 //				RefSpeedR = Fast_Speed + ((long) SensorL - (long) SensorR) * Steering_Forward_P \
 //															 + ((long) SensorFL - (long) SensorFR) * Steering_Forward_P;
 //			}
-			error = ((long) SensorL - (long) SensorR) + ((long) SensorFL - (long) SensorFR);
-			integrated_error += error;
-			if (error > Steering_Forward_I_CAP) error = Steering_Forward_I_CAP;
-			if (error < -Steering_Forward_I_CAP) error = -Steering_Forward_I_CAP;
 		
+		// + > biasing to right
+		// - < biasing to left
+		  error = ((long) SensorL - (long) SensorR) + ((long) SensorFL - (long) SensorFR);
+		// By practical observation: the value of error is in the range [-255, 255]
+		// therefore the next capping statements are not necessary.
+		
+		// Not necessary
+//			if (error > Steering_Forward_I_CAP) error = Steering_Forward_I_CAP;
+//			if (error < -Steering_Forward_I_CAP) error = -Steering_Forward_I_CAP;
+			integrated_error += error;
+			
 			RefSpeedR = Fast_Speed + error * Steering_Forward_P + integrated_error / Steering_Forward_I;
+			
 			if (RefSpeedR > Fast_Speed + 6000) RefSpeedR = Fast_Speed + 6000;
 			if (RefSpeedR <Fast_Speed - 6000) RefSpeedR = Fast_Speed - 6000;
 			
-			if (RefSpeedL == CurrentSpeedL) {
+			if (CurrentSpeedL == RefSpeedL) {
 				IncrementalController(RefSpeedR, &CurrentSpeedR);
 			} else {
 				IncrementalController(RefSpeedL, &CurrentSpeedL);
 				CurrentSpeedR = CurrentSpeedL;
 			}
 			
-			if (RefSpeedR > 25000) RefSpeedR = 25000;
-			if (RefSpeedR < 0) RefSpeedR = 0;
+			// the next two lines are meaningless
+//			if (RefSpeedR > 25000) RefSpeedR = 25000;
+//			if (RefSpeedR < 0) RefSpeedR = 0;
 			
-			if (SensorF<FRONT_THRESH) {
+			
+			// State change
+			
+			// Emergency
+			if (SensorF < F_Go2Stop_THRS) {
 				currentState = Stop; break;
 			}
-			if (SensorL >= 50) {
-				currentState = SteerLeft; break;
-			}
-			if (SensorR >= 50) {
-				currentState = SteerRight; break;
+			
+			// Normal : equal
+			if(SensorF < F_Go2Steer_THRS) {
+				if(SensorR > SensorL) {
+					if(SensorR >= S_Go2Steer_THRS) {
+						currentState = SteerRight;
+					}
+				} else {
+					if (SensorL >= S_Go2Steer_THRS) {
+						currentState = SteerLeft;
+					}
+				}
 			}
 			break;
+			
 		case TurnRight:
+			/****************************************/ Debug_LED(YELLOW);
+		
 			//RefSpeedL = Slow_Speed;
 			//RefSpeedR = Slow_Speed - (FRONT_THRESH-SensorF)*Steering_Turn;
 			//RefSpeedR = Slow_Speed - 6000;
@@ -125,11 +158,15 @@ void Controller(void) {
 			RefSpeedL = BASE_TURN + 2000;
 			IncrementalController(RefSpeedR, &CurrentSpeedR);
 			IncrementalController(RefSpeedL, &CurrentSpeedL);
-			if (SensorF>FRONT_THRESH) {
-				currentState = GoForward; break;
-			}
+
+			// State change
+			if (SensorF > F_Turn2Go_THRS) currentState = GoForward;
+
 			break;
+			
 		case TurnLeft:
+			/****************************************/ Debug_LED(BLUE);
+		
 //			RefSpeedL = Slow_Speed;
 //			RefSpeedR = Slow_Speed + (FRONT_THRESH-SensorF)*Steering_Turn;
 //			RefSpeedR = Slow_Speed + 6000;		
@@ -141,16 +178,20 @@ void Controller(void) {
 			RefSpeedL = -BASE_TURN - 1500;
 			IncrementalController(RefSpeedR, &CurrentSpeedR);
 			IncrementalController(RefSpeedL, &CurrentSpeedL);
-			if (SensorF>FRONT_THRESH) {
-				currentState = GoForward; break;
-			}
+
+			// State change
+			if (SensorF > F_Turn2Go_THRS) currentState = GoForward;
+		
 			break;
+			
 		case Stop:
+			/****************************************/ Debug_LED(WHITE);
+		
 			RefSpeedR = RefSpeedL = 0;
 			IncrementalController(RefSpeedR, &CurrentSpeedR);
 			CurrentSpeedL = CurrentSpeedR;
 		  if (CurrentSpeedR == 0) {
-				if (SensorF < FRONT_THRESH) {
+				if (SensorF < F_Turn2Go_THRS) {
 					if (SensorFR< SensorFL - 5) {
 						currentState=TurnLeft; break; 
 					}
@@ -167,30 +208,40 @@ void Controller(void) {
 				}
 			} 
 			break;
-		case SteerRight: 
-			RefSpeedR = Slow_Speed-6000;
+			
+		case SteerRight:
+			/****************************************/ Debug_LED(GREEN);
+		
+			RefSpeedR = Slow_Speed - Steer_Diff;
 			RefSpeedL = Slow_Speed;
+		
 			if (RefSpeedL == Slow_Speed) {
 				IncrementalController(RefSpeedR, &CurrentSpeedR);
 			} else {
 				IncrementalController(RefSpeedL, &CurrentSpeedL);
 				CurrentSpeedR = CurrentSpeedL;
 			}
-			if (SensorF >= FRONT_THRESH+20) currentState = GoForward;
-			if (SensorF <FRONT_THRESH) currentState = Stop;
+			
+			// State change
+			if (SensorF >= F_Steer2Go_THRS) currentState = GoForward;
+			if (SensorF <  F_Go2Stop_THRS) currentState = Stop;
 			break;
-		case SteerLeft: 
+			
+		case SteerLeft:
+			/****************************************/ Debug_LED(PURPLE);
+		
 			RefSpeedR = Slow_Speed;
-			RefSpeedL = Slow_Speed-6000;
+			RefSpeedL = Slow_Speed- Steer_Diff;
 			if (RefSpeedR == Slow_Speed) {
 				IncrementalController(RefSpeedL, &CurrentSpeedL);
 			} else {
 				IncrementalController(RefSpeedR, &CurrentSpeedR);
 				CurrentSpeedL = CurrentSpeedR;
 			}
-			if (SensorF >= FRONT_THRESH+20) currentState = GoForward;
-			if (SensorF <FRONT_THRESH) currentState = Stop;
-			break;
+			
+			// State change
+			if (SensorF >= F_Steer2Go_THRS) currentState = GoForward;
+			if (SensorF < F_Go2Stop_THRS) currentState = Stop;
 			break;
 	}
 	
@@ -210,12 +261,11 @@ static void NetworkReceive(void) {
 	RefSpeedR = RefSpeedL = 3000;
 	while (1) {
 		CAN0_GetMail(&receiveID, canData);	
-		/******************************************/Debug_LED_heartbeat();
 		
 		if (receiveID == IRSensor) {			
 				SensorF = canData[3];
-				SensorFL = canData[2];
-				SensorFR = canData[0];
+				SensorL = canData[2];
+				SensorR = canData[0];
 			
 			#if   DEBUG_LCD
 			#if DEBUG
@@ -229,8 +279,8 @@ static void NetworkReceive(void) {
 				RightAngle = (unsigned char) (myatan((double)SensorR / (double)SensorF)*180/3.14 + 0.5);
 
 		} else if(receiveID == PingSensor) {
-				SensorL = canData[0];
-				SensorR = canData[1];
+				SensorFL = canData[0];
+				SensorFR = canData[1];
 				
 			#if   DEBUG_LCD
 			#if DEBUG

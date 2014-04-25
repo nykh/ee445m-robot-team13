@@ -174,8 +174,8 @@ static void NetworkReceive(void) {
 		
 		if (receiveID == IRSensor) {			
 				SensorF = canData[3];
-				SensorFL = canData[2];
-				SensorFR = canData[0];
+				SensorL = canData[2];
+				SensorR = canData[0];
 			
 			#if   DEBUG_LCD
 			#if DEBUG
@@ -189,8 +189,9 @@ static void NetworkReceive(void) {
 				RightAngle = (unsigned char) (myatan((double)SensorR / (double)SensorF)*180/3.14 + 0.5);
 
 		} else if(receiveID == PingSensor) {
-				SensorL = canData[0];
-				SensorR = canData[1];
+				SensorFL = canData[0];
+				SensorFR = canData[1];
+			
 				
 			#if   DEBUG_LCD
 			#if DEBUG

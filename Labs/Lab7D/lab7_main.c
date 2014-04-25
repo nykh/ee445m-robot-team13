@@ -6,11 +6,9 @@
 
 #include "ST7735.h"
 #include "motor.h"
-#include "atan.h"
 
 #include "ir_sensor.h"
 #include "ping.h"
-
 
 #include "interpreter.h"
 #include "gpio_debug.h"
@@ -35,7 +33,7 @@ static long CurrentSpeedL = 0;
 static long RefSpeedR = 0;
 static long RefSpeedL = 0;
 
-unsigned char SensorF, SensorR, SensorL, SensorFR, SensorFL, RightAngle;
+unsigned char SensorF, SensorFPing, SensorR, SensorL, SensorFR, SensorFL;
 
 // Function implementing an incremental controller
 static void IncrementalController( long ref,  long *curr);
@@ -43,75 +41,66 @@ typedef enum State_t {GoForward, TurnRight, TurnLeft, Stop, SteerRight, SteerLef
 
 void Controller(void) {
 	static State currentState = GoForward;
+	static long error;
+	
+	unsigned long calculated_front = (SensorF < 70)? SensorF: SensorFPing;
 	
 	#if   DEBUG_LCD
 	#if !DEBUG
 	static int i = 0;
 	i = (i+1)&0x7;
 	switch(i) {
-		case 0: ST7735_Message(1,0, "Front: ", SensorF); break;
-		case 1: ST7735_Message(1,2, "Right: ", SensorR); break;
-		case 2: ST7735_Message(1,1, "Left: ", SensorL); break;
-		case 3:	ST7735_Message(1,3, "FroRight: ", SensorFR);
+		case 0: ST7735_Message(1,0, "Front IR: ", SensorF); break;
+		case 1: ST7735_Message(1,1, "Front Pg: ", SensorFPing); break;
+		case 2:	ST7735_Message(1,2, "FroR: ", SensorFR);
+		case 3:	ST7735_Message(1,3, "FroL: ", SensorFL);	
 		
-		case 4: ST7735_Message(0,0, "Speed0: ", (unsigned long) RefSpeedR); break;
-		case 5: ST7735_Message(0,1, "Speed1: ", (unsigned long) RefSpeedL); break;
+		case 4:	ST7735_Message(0,0, "Right: ", SensorR);
+		case 5:	ST7735_Message(0,1, "Left : ", SensorL);
+		
+		// case 4: /*ST7735_Message(0,0, "Speed0: ", (unsigned long) RefSpeedR);*/ break;
+		// case 5: /*ST7735_Message(0,1, "Speed1: ", (unsigned long) RefSpeedL);*/ break;
+		case 6: ST7735_Message(0,2, "Error: ", (long) error); break;
+		case 7: ST7735_Message(0,3, "Front: ", (unsigned long) calculated_front); break;
 	}
 	#endif
 	#endif
 	
-	#define Fast_Speed  18000
-	#define Slow_Speed  14000
-	#define Steering_Turn    150
-	#define Steer_Diff       3000
+	#define Fast_Speed  24000
+	#define Slow_Speed  12000
+	#define Steer_Diff  2000
 	#define Steering_Forward_P   30
-	#define Steering_Forward_I   10
-	#define Steering_Forward_I_CAP  1000
-	#define BASE_TURN			8000
+	#define Steering_Forward_I   8 // Smaller = I term greater
+	#define Turn_Speed	8000
 	
 	#define F_Go2Stop_THRS   35
 	#define F_Turn2Go_THRS   F_Go2Stop_THRS+5
 	#define F_Go2Steer_THRS  60
 	#define F_Steer2Go_THRS  F_Go2Stop_THRS+20
-	#define SIDE_THRS        30
 	#define S_Go2Steer_THRS  50
+	
+	#define FRONT            SensorF
 	
 	//currentState=TurnLeft;
 	switch(currentState) {
 		static long integrated_error = 0;
-		long error;
 		
 		case GoForward:
 			/****************************************/ Debug_LED(RED);
 		
 			RefSpeedL = Fast_Speed;
 		
-//			if (SensorL > SIDE_THRESH+10) {
-//				RefSpeedR = Fast_Speed + ( 30 - (long) SensorR) * Steering_Forward_P \
-//															 + ( 45 - (long) SensorFR) * Steering_Forward_P;
-//			} else if (SensorR > SIDE_THRESH+10) {
-//				RefSpeedR = Fast_Speed + ( (long) SensorL - 30) * Steering_Forward_P	\
-//															 + ( (long) SensorL - 45) * Steering_Forward_P;
-//			} else {
-//				RefSpeedR = Fast_Speed + ((long) SensorL - (long) SensorR) * Steering_Forward_P \
-//															 + ((long) SensorFL - (long) SensorFR) * Steering_Forward_P;
-//			}
-		
 		// + > biasing to right
 		// - < biasing to left
-		  error = ((long) SensorL - (long) SensorR) + ((long) SensorFL - (long) SensorFR);
+		  error = (7*((long) SensorL - (long) SensorR) + 1*((long) SensorFL - (long) SensorFR))/8;
 		// By practical observation: the value of error is in the range [-255, 255]
-		// therefore the next capping statements are not necessary.
-		
-		// Not necessary
-//			if (error > Steering_Forward_I_CAP) error = Steering_Forward_I_CAP;
-//			if (error < -Steering_Forward_I_CAP) error = -Steering_Forward_I_CAP;
+
 			integrated_error += error;
 			
 			RefSpeedR = Fast_Speed + error * Steering_Forward_P + integrated_error / Steering_Forward_I;
 			
 			if (RefSpeedR > Fast_Speed + 6000) RefSpeedR = Fast_Speed + 6000;
-			if (RefSpeedR <Fast_Speed - 6000) RefSpeedR = Fast_Speed - 6000;
+			if (RefSpeedR < Fast_Speed - 6000) RefSpeedR = Fast_Speed - 6000;
 			
 			if (CurrentSpeedL == RefSpeedL) {
 				IncrementalController(RefSpeedR, &CurrentSpeedR);
@@ -120,26 +109,24 @@ void Controller(void) {
 				CurrentSpeedR = CurrentSpeedL;
 			}
 			
-			// the next two lines are meaningless
-//			if (RefSpeedR > 25000) RefSpeedR = 25000;
-//			if (RefSpeedR < 0) RefSpeedR = 0;
-			
-			
 			// State change
 			
 			// Emergency
-			if (SensorF < F_Go2Stop_THRS) {
+			if (FRONT < F_Go2Stop_THRS) {
+				integrated_error = 0;
 				currentState = Stop; break;
 			}
 			
 			// Normal : equal
-			if(SensorF < F_Go2Steer_THRS) {
+			if(FRONT < F_Go2Steer_THRS) {
 				if(SensorR > SensorL) {
 					if(SensorR >= S_Go2Steer_THRS) {
+						integrated_error = 0;
 						currentState = SteerRight;
 					}
 				} else {
 					if (SensorL >= S_Go2Steer_THRS) {
+						integrated_error = 0;
 						currentState = SteerLeft;
 					}
 				}
@@ -154,13 +141,13 @@ void Controller(void) {
 			//RefSpeedR = Slow_Speed - 6000;
 //			i
 		
-			RefSpeedR = -BASE_TURN + 2000;
-			RefSpeedL = BASE_TURN + 2000;
+			RefSpeedR = -Turn_Speed + 2000;
+			RefSpeedL = Turn_Speed + 2000;
 			IncrementalController(RefSpeedR, &CurrentSpeedR);
 			IncrementalController(RefSpeedL, &CurrentSpeedL);
 
 			// State change
-			if (SensorF > F_Turn2Go_THRS) currentState = GoForward;
+			if (FRONT > F_Turn2Go_THRS) currentState = GoForward;
 
 			break;
 			
@@ -174,37 +161,37 @@ void Controller(void) {
 //			if (RefSpeedR < 0) {
 //				RefSpeedR = 0;
 //			}
-			RefSpeedR = +BASE_TURN;
-			RefSpeedL = -BASE_TURN - 1500;
+			RefSpeedR = +Turn_Speed;
+			RefSpeedL = -Turn_Speed - 1500;
 			IncrementalController(RefSpeedR, &CurrentSpeedR);
 			IncrementalController(RefSpeedL, &CurrentSpeedL);
 
 			// State change
-			if (SensorF > F_Turn2Go_THRS) currentState = GoForward;
+			if (FRONT > F_Turn2Go_THRS) currentState = GoForward;
 		
 			break;
 			
 		case Stop:
 			/****************************************/ Debug_LED(WHITE);
 		
+		  // Stoping the wheels
 			RefSpeedR = RefSpeedL = 0;
 			IncrementalController(RefSpeedR, &CurrentSpeedR);
 			CurrentSpeedL = CurrentSpeedR;
+		
 		  if (CurrentSpeedR == 0) {
-				if (SensorF < F_Turn2Go_THRS) {
-					if (SensorFR< SensorFL - 5) {
-						currentState=TurnLeft; break; 
-					}
-					if (SensorFL < SensorFR - 5) {
-						currentState=TurnRight; break; 
-					}
-					if (SensorR>SensorL) {
-						currentState=TurnRight; break; 
+				if (FRONT < F_Turn2Go_THRS) {
+					if (SensorFR < SensorFL - 5) {
+						currentState=TurnLeft;
+					} else if (SensorFL < SensorFR - 5) {
+						currentState=TurnRight;
+					} else if (SensorR > SensorL) {
+						currentState=TurnRight;
 					} else {
-						currentState=TurnLeft; break; 
+						currentState=TurnLeft;
 					} 
 				} else {
-				currentState = GoForward;
+					currentState = GoForward;
 				}
 			} 
 			break;
@@ -223,8 +210,8 @@ void Controller(void) {
 			}
 			
 			// State change
-			if (SensorF >= F_Steer2Go_THRS) currentState = GoForward;
-			if (SensorF <  F_Go2Stop_THRS) currentState = Stop;
+			if (FRONT >= F_Steer2Go_THRS) currentState = GoForward;
+			if (FRONT <  F_Go2Stop_THRS) currentState = Stop;
 			break;
 			
 		case SteerLeft:
@@ -240,8 +227,8 @@ void Controller(void) {
 			}
 			
 			// State change
-			if (SensorF >= F_Steer2Go_THRS) currentState = GoForward;
-			if (SensorF < F_Go2Stop_THRS) currentState = Stop;
+			if (FRONT >= F_Steer2Go_THRS) currentState = GoForward;
+			if (FRONT < F_Go2Stop_THRS) currentState = Stop;
 			break;
 	}
 	
@@ -276,11 +263,10 @@ static void NetworkReceive(void) {
 			#endif
 			#endif
 			
-				RightAngle = (unsigned char) (myatan((double)SensorR / (double)SensorF)*180/3.14 + 0.5);
-
 		} else if(receiveID == PingSensor) {
 				SensorFL = canData[0];
 				SensorFR = canData[1];
+				SensorFPing = canData[2];
 				
 			#if   DEBUG_LCD
 			#if DEBUG
@@ -295,7 +281,7 @@ static void NetworkReceive(void) {
 	}
 }
 
-#define INC_STEP  3000
+#define INC_STEP  4000
 static void IncrementalController( long ref,  long *curr) {
 	if (*curr > ref + INC_STEP ) {
 		  *curr -= INC_STEP;

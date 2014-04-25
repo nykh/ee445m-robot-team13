@@ -30,7 +30,7 @@
 #define __CAN0_H__
 #define CAN_BITRATE             500000
 
-#define CAN    0 //1 = receiver, 0 = transmitter
+#define CAN    1 //1 = receiver, 0 = transmitter
 // reverse these IDs on the other microcontroller
 
 // 11 bit

@@ -18,7 +18,7 @@
 
 static unsigned short data[4];
 
-#define APPLY_FILTER 1
+#define APPLY_FILTER 0
 
 #if APPLY_FILTER
 /************************* Median Filter *******************/

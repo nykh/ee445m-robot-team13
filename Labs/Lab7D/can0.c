@@ -84,10 +84,12 @@ void CAN0_Handler(void){ unsigned char data[4];
     ulIDStatus = CANStatusGet(CAN0_BASE, CAN_STS_NEWDAT);
     for(i = 0; i < 32; i++){    //test every bit of the mask
       if( (0x1 << i) & ulIDStatus){  // if active, get data
+				#if CAN
 				RCVPacket newpacket;
+				#endif
 				
 				CANMessageGet(CAN0_BASE, (i+1), &xTempMsgObject, true);
-				
+				#if CAN
 				newpacket.RCVID = (PackageID) xTempMsgObject.ulMsgID;
 				newpacket.RCVData[0] = data[0];
 				newpacket.RCVData[1] = data[1];
@@ -97,6 +99,7 @@ void CAN0_Handler(void){ unsigned char data[4];
 				RCVFifo_Put(newpacket);
 				
 				OS_Signal(&Sema4CAN);
+				#endif
       }
     }
   }
@@ -143,8 +146,10 @@ void CAN0_Open(void){unsigned long volatile delay;
 // Set up filter to receive these IDs
 // in this case there is just one type, but you could accept multiple ID types
   //CAN0_Setup_Message_Object(RCV_ID, MSG_OBJ_RX_INT_ENABLE, 4, NULL, RCV_ID, MSG_OBJ_TYPE_RX);
+	#if CAN
   CAN0_Setup_Message_Object((unsigned long) (IRSensor), MSG_OBJ_RX_INT_ENABLE, 4, NULL, (unsigned long) (IRSensor), MSG_OBJ_TYPE_RX);
   CAN0_Setup_Message_Object((unsigned long) (PingSensor), MSG_OBJ_RX_INT_ENABLE, 4, NULL, (unsigned long) (PingSensor), MSG_OBJ_TYPE_RX);
+	#endif
   
   NVIC_EN1_R = (1 << (INT_CAN0 - 48)); //IntEnable(INT_CAN0);
   

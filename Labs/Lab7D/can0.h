@@ -30,15 +30,8 @@
 #define __CAN0_H__
 #define CAN_BITRATE             500000
 
-#define CAN    1 //1 = receiver, 0 = transmitter
+#define CAN    0 //1 = receiver, 0 = transmitter
 // reverse these IDs on the other microcontroller
-#if CAN
-	#define RCV_ID 4
-	#define XMT_ID 2
-#else
-	#define RCV_ID 2
-	#define XMT_ID 4
-#endif
 
 // 11 bit
 typedef enum PackageID_t {

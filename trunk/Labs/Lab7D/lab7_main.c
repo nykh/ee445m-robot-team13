@@ -25,7 +25,7 @@ unsigned int NumCreated;
 
 #if MAIN  /******************** Motor Control side *******************/
 
-#define DEBUG_LCD 1
+#define DEBUG_LCD 0
 #define DEBUG  0
 
 static long CurrentSpeedR = 0;
@@ -33,6 +33,8 @@ static long CurrentSpeedL = 0;
 static long RefSpeedR = 0;
 static long RefSpeedL = 0;
 
+static long FrontSideError = 0, LastFrontSideError = 0, FrontSideErrorDiff = 0;
+static long SideError = 0, LastSideError = 0, SideErrorDiff = 0;
 unsigned char SensorF, SensorFPing, SensorR, SensorL, SensorFR, SensorFL;
 
 // Function implementing an incremental controller
@@ -68,13 +70,15 @@ void Controller(void) {
 	#define Fast_Speed  24000
 	#define Slow_Speed  12000
 	#define Steer_Diff  2000
-	#define Steering_Forward_P   80
-	#define Steering_Forward_I   50 // Smaller = I term greater
+	#define Steering_Forward_P   60
+	#define Steering_Forward_I   20 // Smaller = I term greater
+	#define Steering_Forward_D   100
 	#define Sterring_Integral_Capacity 2000
 	#define Turn_Speed	8000
 	
 	#define F_Go2Stop_THRS   40
 	#define F_Turn2Go_THRS   F_Go2Stop_THRS+5
+	#define FS_Go2Stop_THRS  8
 	#define F_Go2Steer_THRS  50
 	#define F_Steer2Go_THRS  F_Go2Steer_THRS+15
 	#define S_Go2Steer_THRS  50
@@ -85,7 +89,7 @@ void Controller(void) {
 	//currentState = GoForward;
 	switch(currentState) {
 		static long integrated_error = 0;
-		
+		static long diff_error = 0;
 		case GoForward:
 			/****************************************/ Debug_LED(RED);
 		
@@ -93,7 +97,8 @@ void Controller(void) {
 		
 		// + > biasing to right
 		// - < biasing to left
-		  error = (3*((long) SensorL - (long) SensorR) + 1*((long) SensorFL - (long) SensorFR))/4;
+		  error = (1*SideError + 1*FrontSideError)/2;
+		  diff_error = (1*SideErrorDiff + 1*FrontSideErrorDiff)/2;
 		// By practical observation: the value of error is in the range [-255, 255]
 
 			integrated_error += error;
@@ -101,29 +106,21 @@ void Controller(void) {
 			if (integrated_error < -Sterring_Integral_Capacity) integrated_error = -Sterring_Integral_Capacity;
 			
 			if (error > 0 ) {
-				RefSpeedL -= error * Steering_Forward_P + integrated_error / Steering_Forward_I;
+				RefSpeedL -= error * Steering_Forward_P + integrated_error / Steering_Forward_I - diff_error * Steering_Forward_D;
 			} else {
-				RefSpeedR += error * Steering_Forward_P + integrated_error / Steering_Forward_I;
+				RefSpeedR += error * Steering_Forward_P + integrated_error / Steering_Forward_I - diff_error * Steering_Forward_D;
 			}
 			
-			if (RefSpeedR < Fast_Speed - 12000) RefSpeedR = Fast_Speed - 12000;
-			if (RefSpeedL < Fast_Speed - 12000) RefSpeedL = Fast_Speed - 12000;
+			if (RefSpeedR < Fast_Speed - 8000) RefSpeedR = Fast_Speed - 8000;
+			if (RefSpeedL < Fast_Speed - 8000) RefSpeedL = Fast_Speed - 8000;
 			
-			if ( CurrentSpeedL < Fast_Speed - 6000) {
-				IncrementalController(RefSpeedL, &CurrentSpeedL);
-				CurrentSpeedR = CurrentSpeedL;
-			} else if ( CurrentSpeedR < Fast_Speed - 6000) {
-				IncrementalController(RefSpeedR, &CurrentSpeedR);
-				CurrentSpeedL = CurrentSpeedR;
-			} else {
-				IncrementalController(RefSpeedR, &CurrentSpeedR);
-				IncrementalController(RefSpeedL, &CurrentSpeedL);				
-			}
+			CurrentSpeedR=RefSpeedR;
+			CurrentSpeedL=RefSpeedL;
 			
 			// State change
 			
 			// Emergency
-			if (FRONT < F_Go2Stop_THRS) {
+			if (FRONT < F_Go2Stop_THRS || SensorFR < FS_Go2Stop_THRS || SensorFL < FS_Go2Stop_THRS) {
 				integrated_error = 0;
 				currentState = Stop; break;
 			}
@@ -191,16 +188,16 @@ void Controller(void) {
 			CurrentSpeedL = CurrentSpeedR;
 		
 		  if (CurrentSpeedR == 0) {
-				if (FRONT < F_Turn2Go_THRS) {
-					if (SensorFR < SensorFL - 5) {
-						currentState=TurnLeft;
-					} else if (SensorFL < SensorFR - 5) {
+				if (FRONT < F_Turn2Go_THRS || SensorFR < FS_Go2Stop_THRS || SensorFL < FS_Go2Stop_THRS ) {
+					if (SensorR > SensorL + 5) {
 						currentState=TurnRight;
-					} else if (SensorR > SensorL) {
+					} else if (SensorL > SensorR + 5) {
+						currentState=TurnLeft;
+					} else if (SensorFL < SensorFR) {
 						currentState=TurnRight;
 					} else {
-						currentState=TurnLeft;
-					} 
+						currentState=TurnLeft;						
+					}
 				} else {
 					currentState = GoForward;
 				}
@@ -264,6 +261,9 @@ static void NetworkReceive(void) {
 				SensorF = canData[3];
 				SensorL = canData[2];
 				SensorR = canData[0];
+				LastSideError = SideError;
+				SideError = (long) SensorL - (long) SensorR;
+				SideErrorDiff = SideError - LastSideError;
 			
 			#if   DEBUG_LCD
 			#if DEBUG
@@ -278,6 +278,9 @@ static void NetworkReceive(void) {
 				SensorFL = canData[0];
 				SensorFR = canData[1];
 				SensorFPing = canData[2];
+				LastFrontSideError = FrontSideError;
+			  FrontSideError = (long) SensorFL - (long) SensorFR;
+				FrontSideErrorDiff = FrontSideError - LastFrontSideError;
 				
 			#if   DEBUG_LCD
 			#if DEBUG
@@ -289,10 +292,12 @@ static void NetworkReceive(void) {
 			#endif
 				
 		}
+		
+		
 	}
 }
 
-#define INC_STEP  1000
+#define INC_STEP  700
 static void IncrementalController( long ref,  long *curr) {
 	if (*curr > ref + INC_STEP ) {
 		  *curr -= INC_STEP;
@@ -380,7 +385,7 @@ int main(void) {
   NumCreated = 0;
   //NumCreated += OS_AddThread(&Interpreter,128,1);
 	IR_Init(); 
-	NumCreated += OS_AddPeriodicThread(&NetworkSend, 100*TIME_1MS, 3); 
+	NumCreated += OS_AddPeriodicThread(&NetworkSend, 10*TIME_1MS, 3); 
 	NumCreated += OS_AddThread(&PingSensorSend, 128, 3);
 	
   

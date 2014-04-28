@@ -71,9 +71,9 @@ void Controller(void) {
 	#define Slow_Speed  12000
 	#define Steer_Diff  2000
 	#define Steering_Forward_P   60
-	#define Steering_Forward_I   20 // Smaller = I term greater
+	#define Steering_Forward_I   10 // Smaller = I term greater
 	#define Steering_Forward_D   100
-	#define Sterring_Integral_Capacity 2000
+	#define Sterring_Integral_Capacity 20000
 	#define Turn_Speed	8000
 	
 	#define F_Go2Stop_THRS   40
@@ -120,11 +120,25 @@ void Controller(void) {
 			// State change
 			
 			// Emergency
-			if (FRONT < F_Go2Stop_THRS || SensorFR < FS_Go2Stop_THRS || SensorFL < FS_Go2Stop_THRS) {
+			/*if (FRONT < F_Go2Stop_THRS || SensorFR < FS_Go2Stop_THRS || SensorFL < FS_Go2Stop_THRS) {
 				integrated_error = 0;
 				currentState = Stop; break;
-			}
+			}*/
 			
+			
+			//Sterring
+			if (FRONT < F_Go2Stop_THRS || SensorFR < FS_Go2Stop_THRS || SensorFL < FS_Go2Stop_THRS) {
+				if (SideError < -5) {
+					currentState = SteerRight;
+				} else if (SideError > 5) {
+					currentState = SteerLeft;
+				} else if (FrontSideError > 0) {
+					currentState = SteerLeft;
+				} else {
+					currentState = SteerRight;					
+				}
+				integrated_error = 0; break;
+			}
 			// Normal : equal
 			/*if(FRONT < F_Go2Steer_THRS) {
 				if(SensorR > SensorL) {
@@ -155,7 +169,7 @@ void Controller(void) {
 			IncrementalController(RefSpeedL, &CurrentSpeedL);
 
 			// State change
-			if (FRONT > F_Turn2Go_THRS) currentState = GoForward;
+			if (FRONT > F_Turn2Go_THRS && SensorFR > FS_Go2Stop_THRS+5 && SensorFL > FS_Go2Stop_THRS+5 )  currentState = GoForward;
 
 			break;
 			
@@ -175,7 +189,7 @@ void Controller(void) {
 			IncrementalController(RefSpeedL, &CurrentSpeedL);
 
 			// State change
-			if (FRONT > F_Turn2Go_THRS) currentState = GoForward;
+			if (FRONT > F_Turn2Go_THRS && SensorFR > FS_Go2Stop_THRS+5 && SensorFL > FS_Go2Stop_THRS+5 ) currentState = GoForward;
 		
 			break;
 			
@@ -187,7 +201,7 @@ void Controller(void) {
 			IncrementalController(RefSpeedR, &CurrentSpeedR);
 			CurrentSpeedL = CurrentSpeedR;
 		
-		  if (CurrentSpeedR == 0) {
+		 // if (CurrentSpeedR == 0) {
 				if (FRONT < F_Turn2Go_THRS || SensorFR < FS_Go2Stop_THRS || SensorFL < FS_Go2Stop_THRS ) {
 					if (SensorR > SensorL + 5) {
 						currentState=TurnRight;
@@ -201,42 +215,35 @@ void Controller(void) {
 				} else {
 					currentState = GoForward;
 				}
-			} 
+		//	} 
 			break;
 			
 		case SteerRight:
 			/****************************************/ Debug_LED(GREEN);
 		
-			RefSpeedR = Slow_Speed - Steer_Diff;
-			RefSpeedL = Slow_Speed;
+			RefSpeedR = Fast_Speed/2;
+			RefSpeedL = Fast_Speed;
 		
-			if (RefSpeedL == Slow_Speed) {
-				IncrementalController(RefSpeedR, &CurrentSpeedR);
-			} else {
-				IncrementalController(RefSpeedL, &CurrentSpeedL);
-				CurrentSpeedR = CurrentSpeedL;
-			}
+			CurrentSpeedR = RefSpeedR;
+			CurrentSpeedL = RefSpeedL;
 			
 			// State change
-			if (FRONT >= F_Steer2Go_THRS) currentState = GoForward;
-			if (FRONT <  F_Go2Stop_THRS) currentState = Stop;
+			//if (FRONT >= F_Steer2Go_THRS) currentState = GoForward;
+			if (FRONT > F_Turn2Go_THRS && SensorFR > FS_Go2Stop_THRS+5 && SensorFL > FS_Go2Stop_THRS+5 ) currentState = GoForward;
 			break;
 			
 		case SteerLeft:
 			/****************************************/ Debug_LED(PURPLE);
 		
-			RefSpeedR = Slow_Speed;
-			RefSpeedL = Slow_Speed- Steer_Diff;
-			if (RefSpeedR == Slow_Speed) {
-				IncrementalController(RefSpeedL, &CurrentSpeedL);
-			} else {
-				IncrementalController(RefSpeedR, &CurrentSpeedR);
-				CurrentSpeedL = CurrentSpeedR;
-			}
+			RefSpeedR = Fast_Speed;
+			RefSpeedL = Fast_Speed/2;
+		
+			CurrentSpeedR = RefSpeedR;
+			CurrentSpeedL = RefSpeedL;
 			
 			// State change
-			if (FRONT >= F_Steer2Go_THRS) currentState = GoForward;
-			if (FRONT < F_Go2Stop_THRS) currentState = Stop;
+			//if (FRONT >= F_Steer2Go_THRS) currentState = GoForward;
+			if (FRONT > F_Turn2Go_THRS && SensorFR > FS_Go2Stop_THRS+5 && SensorFL > FS_Go2Stop_THRS+5 ) currentState = GoForward;
 			break;
 	}
 	
@@ -299,6 +306,8 @@ static void NetworkReceive(void) {
 
 #define INC_STEP  700
 static void IncrementalController( long ref,  long *curr) {
+	*curr = ref;
+	return;
 	if (*curr > ref + INC_STEP ) {
 		  *curr -= INC_STEP;
 	} else if (*curr < ref - INC_STEP) {

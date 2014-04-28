@@ -42,10 +42,42 @@ static unsigned char Sensor_fail[numSensor] = {0,};
 
 static void Ping_measure(unsigned char number);
 
+#define APPLY_FILTER 1
+
+#if APPLY_FILTER
+/************************* Median Filter *******************/
+static unsigned short median3(unsigned short *buf3){
+	if(buf3[0] > buf3[1]) {
+		if(buf3[0] < buf3[2]) return buf3[0]; // 2 0 1
+		else return (buf3[1] > buf3[2]) ? buf3[1] : buf3[2]; // 0 1 2 or 0 2 1
+	} else { // 1 > 0
+		if(buf3[0] > buf3[2]) return buf3[0]; // 1 0 2
+		else return (buf3[1] > buf3[2]) ? buf3[2] : buf3[1]; // 1 2 0 or 2 1 0
+	}
+}
+
+typedef struct {
+	unsigned short buf[6];
+	unsigned char index;
+} MedFilter;
+
+MedFilter filter[2] = {{{0}, 5},{{0}, 5}};
+
+unsigned short MedianFilter(MedFilter *f, unsigned short n) {
+	unsigned char i = f->index;
+	if(++(f->index) == 6) f->index = 3;
+	
+	f->buf[i-3] = f->buf[i] = n;
+	return median3(&f->buf[i-3+1]);
+}
+
+#endif
+
 void Ping_Thread(void) {
 	while(1) {
 		Ping_measure(0);
 		Ping_measure(1);
+		
 //		Ping_measure(2);
 //		Ping_measure(3);
 	}
@@ -139,11 +171,13 @@ static void Ping_measure(unsigned char number){
 		tin = OS_TimeDifference(Finishtime[PingNum],Starttime[PingNum]);
 		d = ((tin*(3310+6*Temperature+5))/16000000); // cm
 		if(d > 255) d = 255;
-		Distance_Result[PingNum] = (unsigned char) d;
+		Distance_Result[PingNum] = MedianFilter(&filter[PingNum], (unsigned char) d);
+		//Distance_Result[PingNum] =  (unsigned char) d;
 		Sensor_fail[PingNum] = 0;
 	} else {
 		Sensor_fail[PingNum] = 1;
 	}
+	
 	EndCritical(sr);
 	
 	OS_bSignal(&Sema4PingResultAvailable[PingNum]);

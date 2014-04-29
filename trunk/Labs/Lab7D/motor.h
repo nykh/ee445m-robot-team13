@@ -50,5 +50,6 @@ void Motor_0_MotionUpdate(unsigned long duty, unsigned char direction);
 void Motor_1_MotionUpdate(unsigned long duty, unsigned char direction);
 
 void Motor_MotionUpdate(long duty0, long duty1);
+void Motor_Stop(void);
 
 #endif // __MOTOR_H__

@@ -121,3 +121,10 @@ void Motor_MotionUpdate(long duty0, long duty1){
 	PWM0_1_CMPA_R = (dir1)? (PERIOD - duty1):(duty1);
 	
 }
+
+void Motor_Stop(void) {
+	PB7 = PB5 = 0;
+	PWM0_0_CMPA_R = PWM0_1_CMPA_R = 2;
+}
+	
+	

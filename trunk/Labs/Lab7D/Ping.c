@@ -24,7 +24,7 @@
 
 #define TimeGap           5 // in 10 ms
 
-#define numSensor    2
+#define numSensor    			2
 
 Sema4Type	Sema4PingResultAvailable[numSensor], Sema4PingIdle;
 long StartCritical (void);    // previous I bit, disable interrupts
@@ -61,7 +61,7 @@ typedef struct {
 	unsigned char index;
 } MedFilter;
 
-MedFilter filter[2] = {{{0}, 5},{{0}, 5}};
+MedFilter filter[numSensor] = {{{0}, 5},{{0}, 5}};
 
 unsigned short MedianFilter(MedFilter *f, unsigned short n) {
 	unsigned char i = f->index;
@@ -77,7 +77,6 @@ void Ping_Thread(void) {
 	while(1) {
 		Ping_measure(0);
 		Ping_measure(1);
-		
 //		Ping_measure(2);
 //		Ping_measure(3);
 	}

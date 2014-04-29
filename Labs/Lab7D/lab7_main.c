@@ -39,17 +39,26 @@ unsigned char SensorF, SensorFPing, SensorR, SensorL, SensorFR, SensorFL;
 
 // Function implementing an incremental controller
 static void IncrementalController( long ref,  long *curr);
-typedef enum State_t {GoForward, TurnRight, TurnLeft, Stop, SteerRight, SteerLeft} State;
+typedef enum State_t {GoForward, TurnRight, TurnLeft, Stop, SteerRight, SteerLeft, GoBackWard} State;
 
 void Controller(void) {
+	static int Time = 0, i = 0;
 	static State currentState = GoForward;
+	static int counter = 0;
 	static long error;
+	unsigned long calculated_front;
 	
-	unsigned long calculated_front = (SensorF < 70)? SensorF: SensorFPing;
+	if (Time == 18000) {
+		Motor_Stop();
+		return;
+	} else {
+		Time++;
+	}
+	
+	calculated_front = (SensorF < 70)? SensorF: SensorFPing;
 	
 	#if   DEBUG_LCD
 	#if !DEBUG
-	static int i = 0;
 	i = (i+1)&0xF;
 	switch(i) {
 		case 0: ST7735_Message(1,0, "Front IR: ", SensorF); break;
@@ -70,18 +79,18 @@ void Controller(void) {
 	#define Fast_Speed  24000
 	#define Slow_Speed  12000
 	#define Steer_Diff  2000
-	#define Steering_Forward_P   60
-	#define Steering_Forward_I   10 // Smaller = I term greater
-	#define Steering_Forward_D   100
-	#define Sterring_Integral_Capacity 20000
+	#define Steering_Forward_P   70
+	#define Steering_Forward_I   20 // Smaller = I term greater
+	#define Steering_Forward_D   0
+	#define Sterring_Integral_Capacity 40000
 	#define Turn_Speed	8000
 	
-	#define F_Go2Stop_THRS   40
+	#define F_Go2Stop_THRS   30
 	#define F_Turn2Go_THRS   F_Go2Stop_THRS+5
 	#define FS_Go2Stop_THRS  8
 	#define F_Go2Steer_THRS  50
 	#define F_Steer2Go_THRS  F_Go2Steer_THRS+15
-	#define S_Go2Steer_THRS  50
+	#define S_Go2Steer_THRS  20
 	
 	#define FRONT            SensorF
 	
@@ -111,8 +120,8 @@ void Controller(void) {
 				RefSpeedR += error * Steering_Forward_P + integrated_error / Steering_Forward_I - diff_error * Steering_Forward_D;
 			}
 			
-			if (RefSpeedR < Fast_Speed - 8000) RefSpeedR = Fast_Speed - 8000;
-			if (RefSpeedL < Fast_Speed - 8000) RefSpeedL = Fast_Speed - 8000;
+			if (RefSpeedR < Fast_Speed - 5000) RefSpeedR = Fast_Speed - 5000;
+			if (RefSpeedL < Fast_Speed - 5000) RefSpeedL = Fast_Speed - 5000;
 			
 			CurrentSpeedR=RefSpeedR;
 			CurrentSpeedL=RefSpeedL;
@@ -137,6 +146,7 @@ void Controller(void) {
 				} else {
 					currentState = SteerRight;					
 				}
+				counter = 0;
 				integrated_error = 0; break;
 			}
 			// Normal : equal
@@ -156,6 +166,10 @@ void Controller(void) {
 			break;
 			
 		case TurnRight:
+			if (counter++ == 100) {
+				counter = 0;
+				currentState = GoBackWard;
+			}
 			/****************************************/ Debug_LED(YELLOW);
 		
 			//RefSpeedL = Slow_Speed;
@@ -169,12 +183,19 @@ void Controller(void) {
 			IncrementalController(RefSpeedL, &CurrentSpeedL);
 
 			// State change
-			if (FRONT > F_Turn2Go_THRS && SensorFR > FS_Go2Stop_THRS+5 && SensorFL > FS_Go2Stop_THRS+5 )  currentState = GoForward;
+			if (FRONT > F_Turn2Go_THRS && SensorFR > FS_Go2Stop_THRS+5 && SensorFL > FS_Go2Stop_THRS+5 ){  
+				currentState = GoForward;
+				counter = 0;
+			}
 
 			break;
 			
 		case TurnLeft:
 			/****************************************/ Debug_LED(BLUE);
+			if (counter++ == 100) {
+				counter = 0;
+				currentState = GoBackWard;
+			}
 		
 //			RefSpeedL = Slow_Speed;
 //			RefSpeedR = Slow_Speed + (FRONT_THRESH-SensorF)*Steering_Turn;
@@ -189,8 +210,10 @@ void Controller(void) {
 			IncrementalController(RefSpeedL, &CurrentSpeedL);
 
 			// State change
-			if (FRONT > F_Turn2Go_THRS && SensorFR > FS_Go2Stop_THRS+5 && SensorFL > FS_Go2Stop_THRS+5 ) currentState = GoForward;
-		
+			if (FRONT > F_Turn2Go_THRS && SensorFR > FS_Go2Stop_THRS+5 && SensorFL > FS_Go2Stop_THRS+5 ) {
+				counter = 0;
+				currentState = GoForward;
+			}
 			break;
 			
 		case Stop:
@@ -220,7 +243,10 @@ void Controller(void) {
 			
 		case SteerRight:
 			/****************************************/ Debug_LED(GREEN);
-		
+			if (counter++ == 100) {
+				counter = 0;
+				currentState = GoBackWard;
+			}
 			RefSpeedR = Fast_Speed/2;
 			RefSpeedL = Fast_Speed;
 		
@@ -234,7 +260,10 @@ void Controller(void) {
 			
 		case SteerLeft:
 			/****************************************/ Debug_LED(PURPLE);
-		
+			if (counter++ == 100) {
+				counter = 0;
+				currentState = GoBackWard;
+			}
 			RefSpeedR = Fast_Speed;
 			RefSpeedL = Fast_Speed/2;
 		
@@ -244,6 +273,19 @@ void Controller(void) {
 			// State change
 			//if (FRONT >= F_Steer2Go_THRS) currentState = GoForward;
 			if (FRONT > F_Turn2Go_THRS && SensorFR > FS_Go2Stop_THRS+5 && SensorFL > FS_Go2Stop_THRS+5 ) currentState = GoForward;
+			break;
+		
+		case GoBackWard:
+			/****************************************/ Debug_LED(VIOLET);
+			if (counter++ == 50) {
+				counter = 0;
+				currentState = GoForward;
+			}
+			RefSpeedR = -Fast_Speed/2;
+			RefSpeedL = -Fast_Speed/2;
+		
+			CurrentSpeedR = RefSpeedR;
+			CurrentSpeedL = RefSpeedL;
 			break;
 	}
 	
@@ -270,6 +312,7 @@ static void NetworkReceive(void) {
 				SensorR = canData[0];
 				LastSideError = SideError;
 				SideError = (long) SensorL - (long) SensorR;
+				//SideError = 30 - (long) SensorR;
 				SideErrorDiff = SideError - LastSideError;
 			
 			#if   DEBUG_LCD
@@ -285,8 +328,10 @@ static void NetworkReceive(void) {
 				SensorFL = canData[0];
 				SensorFR = canData[1];
 				SensorFPing = canData[2];
+			
 				LastFrontSideError = FrontSideError;
 			  FrontSideError = (long) SensorFL - (long) SensorFR;
+				//FrontSideError = 45 - (long) SensorFR;
 				FrontSideErrorDiff = FrontSideError - LastFrontSideError;
 				
 			#if   DEBUG_LCD
@@ -385,7 +430,6 @@ int main(void) {
   
   OS_Init();
 	
-	
 	CAN0_Open();
 	OS_InitSemaphore(&Sema4CAN, 1);
 	
@@ -396,9 +440,6 @@ int main(void) {
 	IR_Init(); 
 	NumCreated += OS_AddPeriodicThread(&NetworkSend, 10*TIME_1MS, 3); 
 	NumCreated += OS_AddThread(&PingSensorSend, 128, 3);
-	
-  
-	
 	
 //	Ping_Init();
   OS_Launch(TIMESLICE);

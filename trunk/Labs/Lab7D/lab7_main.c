@@ -79,7 +79,7 @@ void Controller(void) {
 	#define Fast_Speed  24000
 	#define Slow_Speed  12000
 	#define Steer_Diff  2000
-	#define Steering_Forward_P   60
+	#define Steering_Forward_P   80
 	#define Steering_Forward_I   40 // Smaller = I term greater
 	#define Steering_Forward_D   0
 	#define Sterring_Integral_Capacity 40000

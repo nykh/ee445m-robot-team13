@@ -50,284 +50,85 @@
 
 \begin{document}
 
-\title{EE445M Lab 6 Report}
+\title{EE445M Lab 7 Report}
 \author{\bfseries Yen-Kai Huang, Siavash Zanganeh Kamali, Chen Cui, Miao Qi, Yan Zhang}
 \maketitle
 
-\section{Objective} The goal of this lab is to prepare for the final Robot race. In this lab we will interface various
-components, including Ping)))) ultrasonic distance sensor, IR distance sensor, and DC motor. A layered communication system
-using CAN protocol will transmit the information between two microcontrollers. We will design and implement a software
-communication protocol to transmit the sensor data and other things.
-
-In this lab we will also form a team of 4 or 5, which requires us also to apply communication skills to function as a team.
+\section{Objective} This is the final robotic project. We build a robot and compete in the final race with other robots.
 
 \section{Hardware Design}
-%\noindent Ping ultrasonic sensor is shown at Figure-\ref{ping}
-\setlength{\pic}{0.8\textwidth}
-\begin{figure}[htp]
-\noindent Ping sensor is shown at Figure-\ref{ping}
-\center
-\includegraphics[width=\pic]{circuits/Ping_Circuit}
-\caption{ }
-\label{ping}
-\end{figure}
 
-IR sensor is shown at Figure-\ref{ir}
-
-\setlength{\pic}{0.8\textwidth}
-\begin{figure}[htp]
-\center
-\includegraphics[width=\pic]{circuits/IR_Circuit}
-\caption{ }
-\label{ir}
-\end{figure}
-
-The DC motor circuit is shown at Figure-\ref{motor}
-
-\setlength{\pic}{0.8\textwidth}
-\begin{figure}[htp]
-
-\center
-\includegraphics[width=\pic]{circuits/PWM_Circuit}
-\caption{ }
-\label{motor}
-\end{figure}
-
-\newpage
-
-\section{Software Design} 
-
-\paragraph{(a)} We made small changes to \texttt{CAN0.c}, replacing the spinlock  mechanism with actual semaphore.
+\section{Software Design}
 
 \lstset{language=C, style=MyCStyle}
-\lstinputlisting{code/can0.c}
 
-We also modified the FIFO macro to internally include semaphores.
+\paragraph{(a) Low-level device drivers for the motor interfaces (header and code files) \\}
+{
+See below
+\lstinputlisting{code/motor.h}
+\lstinputlisting{code/motor.c}
+}
 
-\lstinputlisting{code/FIFO_sema4.h}
-
-\paragraph{(b)} IR sensor code is basically the same as Lab.\ 4, except that I decoupled the \texttt{Filter()} functions
-from the filter buffer. The call-back functions in ADC routine is now responsible for acquiring and storing the data.
+\paragraph{(b) Low-level device drivers for the sensor interfaces (header and code files) \\}
+{
+IR sensor code is basically the same as Lab.\ 6, but with filter removed. A calibration function is added
+that applies linear interpolation to find out the real distance.
 
 \lstinputlisting{code/ir_sensor.h}
 \lstinputlisting{code/ir_sensor.c}
 
-For the Ping))) interfacing, we used one pin to output the $ 5 \, \mu s$ pulse, and one pin for each sensor set to
-trigger an interrupt at both edges. The handler will calculate the difference of time between the two edges and thus
-determine the distance measurement.
+The Ping))) sensor code is similar to Lab.\ 6 but now a median filter is added to stabilize the value. Also
+the number of sensor is optimized to 2.
 
 \lstinputlisting{code/ping.h}
 \lstinputlisting{code/ping.c}
 
-\paragraph{(c)} The code that sets up the distributed data acquisition system comes in two sides. On the transmitter side,
-the \texttt{main} initializes the sensors and network, and sends data periodically at about $ 10 \, Hz $.
+}
 
-\lstinputlisting{code/main_TX.c}
+\paragraph{(c) High-level competition algorithm \\}
+{
+Our final competing algorithm employs a PI controller and a finite state machine.
 
-On the receiver side, the \texttt{main} initializes the display and network, then add a thread that waits for the packet
-from the network. Once it receives a packet, it checks the packet ID to determine the type of data and then publish it
-to the display.
+\lstinputlisting{code/algorithm.c}
+}
 
-\lstinputlisting{code/main_RX.c}
+\paragraph{(d) Final data flow graph \\}
+See Figure-\ref{df}
 
-This is a very simplistic example, however, it contains the full range of function for a distributed Data Acquisition System.
+\setlength{\pic}{0.8\textwidth}
+\begin{figure}[htp]
+\center
+\includegraphics[width=\pic]{pic/dataflow}
+\caption{Data flow graph} \label{df}
+\end{figure}
+
+\paragraph{(d) Final call graph \\}
+See Figure-\ref{cg}
+
+\setlength{\pic}{0.8\textwidth}
+\begin{figure}[htp]
+\center
+\includegraphics[width=\pic]{pic/callgraph}
+\caption{Call graph} \label{cg}
+\end{figure}
 
 \section{Measurement}
 
-\paragraph{(a) Ping))) Calibration}	Ping measurements in Table-\ref{tab1}
-\begin{table}
-\tiny
-\center
-  \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
-    \hline
-    \multicolumn{11}{|c|}{Ping measurements} \\
-    \hline
-   Truth dT(cm) & \multicolumn{8}{|c|}{measured dM(cm)} & standard deviation & span \\
-    \hline
-    10 & 10.1538 & 10.2742 & 10.129 & 10.2398 & 9.9102 & 10.1231 & 10.2314 & 9.9324 & 0.136715993 & 0.364\\
-	20 & 20.7653 & 20.9498 & 20.4286 & 20.5348 & 20.8695 & 21.0135 & 20.8493 & 20.9756 & 0.212323325 & 0.5849\\
-	30 & 31.4354 & 31.2317 & 31.2342 & 31.5463 & 31.8467 & 31.6756 & 31.3765 & 31.0475 & 0.260240679 & 0.7992\\
-	50 & 52.7532 & 52.8654 & 52.2543 & 52.7397 & 52.9485 & 53.0123 & 52.9475 & 53.2397 & 0.286319955 & 0.9854\\
-	80 & 83.1323 & 82.1398 & 83.2538 & 84.0132 & 83.8764 & 83.1233 & 82.4956 & 83.2835 & 0.626714781 & 1.8734\\
-    \hline
-  \end{tabular}
-  \caption{Ping measurements}
-  \label{tab1}
-\end{table}
-
-%\begin{table}[htbp]
-%  \tiny
-%  \centering
-%  \caption{Ping measurements \textbf{cm}}
-%  \begin{tabularx}{\textwidth}{|X|X|X|X|X|X|X|X|X|X|X|}
-%  \hline
-%  \multicolumn{11}{|c|}{Ping measurements} \\
-%  Truth dT(cm0) & \multicolumn{8}{|c|}{measured dM(cm)} & standard deviation & span \\
-%  \hline
-%    10 & 10.1538 & 10.2742 & 10.129 & 10.2398 & 9.9102 & 10.1231 & 10.2314 & 9.9324 & 0.136715993 & 0.364\\
-%	20 & 20.7653 & 20.9498 & 20.4286 & 20.5348 & 20.8695 & 21.0135 & 20.8493 & 20.9756 & 0.212323325 & 0.5849\\
-%	30 & 31.4354 & 31.2317 & 31.2342 & 31.5463 & 31.8467 & 31.6756 & 31.3765 & 31.0475 & 0.260240679 & 0.7992\\
-%	50 & 52.7532 & 52.8654 & 52.2543 & 52.7397 & 52.9485 & 53.0123 & 52.9475 & 53.2397 & 0.286319955 & 0.9854\\
-%	80 & 83.1323 & 82.1398 & 83.2538 & 84.0132 & 83.8764 & 83.1233 & 82.4956 & 83.2835 & 0.626714781 & 1.8734\\
-%    \hline
-%    \end{tabularx}%
-%  \label{tab:addlabel}%
-%\end{table}%
-
-
-\paragraph{(b) IR sensor Calibration}	IR sensor measurements in Table-\ref{tab2}
-
-\begin{table}
-\tiny
-\center
-  \begin{tabular}{|c|c|c|c|c|c|c|}
-    \hline
-    \multicolumn{7}{|c|}{IR sensor measurements} \\
-    \hline
-    Truth dT(c0) & ADC average & ADC Std. Dev. & ADC span & Voltage average(V) & Voltage Std. Dev.(V) & Voltage span (V)\\
-    \hline
-	10 & 2822 & 5 & 19 & 2.067 & 0.004 & 0.014\\
-	15 & 1979 & 4 & 15 & 1.450 & 0.003 & 0.011\\
-	20 & 1570 & 5 & 19 & 1.150 & 0.003 & 0.014\\
-	25 & 1282 & 6 & 25 & 0.939 & 0.005 & 0.018\\
-	30 & 1114 & 5 & 27 & 0.816 & 0.004 & 0.020\\
-	35 & 941 & 2 & 8 & 0.689 & 0.001 & 0.006\\
-	40 & 848 & 7 & 23 & 0.621 & 0.005 & 0.017\\
-	45 & 748 & 6 & 24 & 0.548 & 0.004 & 0.018\\
-	50 & 675 & 5 & 18 & 0.494 & 0.003 & 0.013\\
-    \hline
-  \end{tabular}
-  \caption{IR measurements}
-  \label{tab2}
-\end{table}
-
-\paragraph{(c) IR sensor noise spectrum} We held a piece of paper constant from the IR sensor and recorded this noise
-spectrum. Because the measured object is nearly static, everything except the DC component should be considered noise.
-The noise therefore includes a noise floor that spans all frequencies. The major source of the noise is the thermal noise
-that includes all frequency and with amplitude of $ \frac{1}{f} $. The other source of noise is electrostatics property
-of the sensor itself, which shows a visible small squarewave in the time domain. This squarewave translates to a noise
-of all frequency in the frequency domain.
-
-\setlength{\pic}{0.8\textwidth}
-\begin{figure}[htp]
-\center
-\includegraphics[width=\pic]{scope/ir_fft}
-\caption{Frequency spectrum of noise}
-\label{noise}
-\end{figure}
-
-
-\paragraph{(d) Motor} DC Motor measurements in Table-\ref{tab3}
-\begin{table}
-\center
-  \begin{tabular}{|c|c|c|}
-    \hline
-    \multicolumn{3}{|c|}{DC Motor measurements} \\
-    \hline
-    Condition & Voltage across motor & Current \\
-    \hline
-	no-load				&	4.41v &	32mA \\
-	with rubber wheel	&	4.42v &	34mA \\
-	wheel \& on carpet	&   4.42v & 100mA \\
-    \hline
-  \end{tabular}
-  \caption{DC motor measurements}
-  \label{tab3}
-\end{table}
-
-
-\paragraph{(e) CAN scope picture} Below is a CAN packet measured at the CANH bus (yellow) and the microcontroller output (blue). It can be observed that the CANH signal is a inverted version of the microcontroller output, however the 
-microcontroller output is changing between 0 and $3.3 \, V$, and the CANH signal is changing between about 2.5 and $3.8 \, V$.
-Also, the length of a typical packet is $ 161.7 \, \mu s $
-
-\setlength{\pic}{0.8\textwidth}
-\begin{figure}[htp]
-\center
-\includegraphics[width=\pic]{scope/CAN_packet}
-\caption{Scope trace of a typical CAN packet}
-\label{trace}
-\end{figure}
-
-
-\paragraph{(f) CAN Network bandwidth} We set the CAN network bit rate at $ 1 Mbit $ and decrease the sampling period of
-IR sensor. The result is shown in Table-\ref{tab4}.
-
-\begin{table}
-\center
-  \begin{tabular}{|c|c|}
-    \hline
-    \multicolumn{2}{|c|}{CAN Bandwidth} \\
-    \hline
-    Sampling Rate  & Data Lost \\
-    \hline
-	100 ms &   No \\
-	10 ms  &   No \\
-	5 ms   &   No \\
-	4 ms   &   Yes \\
-	3 ms   &   Yes \\
-	2 ms   &   Yes \\
-	1 ms   &   Yes \\
-    \hline
-  \end{tabular}
-  \caption{Bandwith measurement}
-  \label{tab4}
-\end{table}
-
-Therefore we deduct the maximum sampling rate the system can handle is $\frac{1}{5 \, ms} \times 4 \text{ bytes} = 800
- \text{ bytes/sec} $.
-Considering the packet length measured in Figure-\ref{trace}, CAN network itself should not be the limiting factor.
-The limiting factor is probably the execution speed of the data acquisition thread on the receiver side, which
-needs to run a 51-point filter code for each IR sensor data.
-
 \section{Analysis}
+\paragraph{(1) What is the effect of time delay in your control system? }
+Time delay such as those introduced by CAN channel, latency for sensor or delay of digital filter all adds latency
+to the robot's response to change in positions.
 
-\paragraph{(1) What is one advantage of the Ping))) sensor over the GP2Y0A21YK sensor? \\ }
+\paragraph{(2) What sensors would you need to develop a more effective passing strategy? }
+I propose we have more reliable long-range IR sensors to replace the unreliable Ping))) sensors.
 
-Ping))) outputs a PWM signal which duty cycles changes linearly with respect to the distance, so it's easier to convert the raw data to distance.
+\paragraph{(3) If you hit the wall a lot, how could you have changed the design to be more effective? If your robot can 
+travel 3 milestones without hitting a wall, you can skip this question. }
 
-\paragraph{(2) What is one advantage of the \textbf{GP2Y0A21YK} sensor over the Ping))) sensor \\ }
+\paragraph{(4) Briefly explain how odometry could be used in your robot (we discussed it in class). If you used it, how 
+well did it work and how could it be improved? If you didn’t use it, why didn’t you use it?}
 
-\emph{GP2Y0A21YK} measures the distance by an analog voltage. It is easier to convert voltage to digital data using ADC compared to measure time in Ping.
 
-\paragraph{(3) Describe the noise of the \textbf{GP2Y0A21YK} when measured with a spectrum analyzer. \\ }
-
-The noise of the sensor is periodic square waves. An square wave contains all different frequencies, with Maximum amplitude at the frequency of the square wave.
-You can see that the spectrum detects many different frequencies.
-
-\paragraph{(4) Why did you choose the digital filters for your sensors? \\ }
-What is the time constant for this filter? I.e., if there is a step change in input, how long until your output changes to at least 1/e of the final value?
-
-Since the transition bandwidth of the analog filter is too large for a 2-pole low-pass filter, therefore we use the digital filter to filter out the noise. 
-
-An analog filter with higher poles is more expensive. 
-
-Since we're using a 51 point FIR filter, and $1/e = 0.36$, we need to sample about 17 points to get enough data to represent 0.36 of the input. 
-
-Therefore, $\text{time constant } = \frac{17}{f_c} = 8.5 \, ms$
-
-\paragraph{(5) Present an alternative design for your H-bridge and describe how your H-bridge is better or worse? \\ }
-
-Alternate design is shown as Figure-\ref{hbridge}
-
-Using our H-bridge is a trade-off. It is better in the simplicity of circuit design so to minimize risk of damaging circuit. Also it saves space. The alternate H-bridge is more sophisticated. This design gets a faster response time of the signal. However it's easier to cause problem and needs more components.
-
-\setlength{\pic}{0.8\textwidth}
-\begin{figure}[htp]
-\noindent Alternative H-bridge circuit at Figure-\ref{hbridge}
-\center
-\includegraphics[width=\pic]{circuits/Alternate_H-bridge}
-\caption{ }
-\label{hbridge}
-\end{figure}
-
-\paragraph{(6) Give the single-most important factor in determining the maximum bandwidth on this distributed system.
-Give the second-most important factor. Justify your answers.  \\ }
-
-Since the system bandwidth was much less than the most possible theoretical bandwidth according to bit rate, the most important factor is the amount of time needed to prepare a package to be sent in the CAN driver, and the amount of time to receive and interpret an incoming package.
-
-The second-most important factor is the bit-rate that determines the amount of time it takes for a single package to be transmitted over the bus.
-
-\newpage
 \section{Post-Mortem Team Evaluation}
 Here we evaluate the Strengths and Weaknesses by teammate.
 

@@ -1,4 +1,0 @@
-Bandwidth with Filter on:  11.5 kHz, bounded by LCD module
-Bandwidth with Filter off: 15 kHz
-Bandwidth with Display off, filter on: 38 kHz, bounded by filter
-Bandwidth with Display off, Filter off: >50 kHz, bounded by system foundation

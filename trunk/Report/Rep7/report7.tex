@@ -58,6 +58,56 @@
 
 \section{Hardware Design}
 
+\paragraph{(a) Final mechanical drawing of the robot }
+See Figure-\ref{mech}
+
+\setlength{\pic}{\textwidth}
+\begin{figure}[htp]
+\center
+\includegraphics[width=\pic]{circuits/mechanical_drawing}
+\caption{Mechanical Drawing} \label{mech}
+\end{figure}
+
+\paragraph{(b) Final electrical circuit diagram for the motor interfaces }
+See Figure-\ref{pwm}
+
+\setlength{\pic}{\textwidth}
+\begin{figure}[htp]
+\center
+\includegraphics[width=\pic]{circuits/PWM_Circuit}
+\caption{Motor Circuit} \label{pwm}
+\end{figure}
+
+
+\paragraph{(c) Final power supply circuitry }
+See Figure-\ref{pw}
+
+\setlength{\pic}{12cm}
+\begin{figure}[htp]
+\center
+\includegraphics[width=\pic]{circuits/Power_Circuit}
+\caption{Power Circuit} \label{pw}
+\end{figure}
+
+
+\paragraph{(d) Final electrical circuit diagram for the sensor interfaces \\}
+See Figure-\ref{ping} for Ping circuits and Figure-\ref{ir} for IR sensor circuits.
+
+\setlength{\pic}{12cm}
+\begin{figure}[htp]
+\center
+\includegraphics[width=\pic]{circuits/ping}
+\caption{Ping Circuit} \label{ping}
+\end{figure}
+
+\setlength{\pic}{12cm}
+\begin{figure}[htp]
+\center
+\includegraphics[width=\pic]{circuits/IR_Circuit}
+\caption{IR Circuit} \label{ir}
+\end{figure}
+
+
 \section{Software Design}
 
 \lstset{language=C, style=MyCStyle}
@@ -113,20 +163,52 @@ See Figure-\ref{cg}
 \end{figure}
 
 \section{Measurement}
+Our score during the qualification run and final competition is as shown in Table-\ref{tab1}.
+\begin{table}
+\center
+  \begin{tabular}{|c|c|r|}
+    \hline
+    \multicolumn{3}{|c|}{Scores} \\
+    \hline
+     Run            & Attempt & Score \\
+    \hline
+     Qualification  & 1       & 3     \\
+                    & 2       & 17    \\
+                    & 3       & 8     \\
+                    & 4       & 10    \\
+    \hline                    
+     Competition    & 1       & 15    \\
+                    & 2       & 15    \\
+                    & 3       & 19    \\                                                         
+    \hline
+  \end{tabular}
+  \caption{Scores}
+  \label{tab1}
+\end{table}
 
+\newpage
 \section{Analysis}
-\paragraph{(1) What is the effect of time delay in your control system? }
-Time delay such as those introduced by CAN channel, latency for sensor or delay of digital filter all adds latency
-to the robot's response to change in positions.
+\paragraph{(1) What is the effect of time delay in your control system? \\}
+The effect of time delay would be that robot reacts to the environment data that belongs to a previous point in time.
+This could result in robot not turning quickly as soon as it finds a gap, the robot not being able to stabilize its
+direction among the sides, and the robot hitting the wall before knowing that it has to stop.
 
-\paragraph{(2) What sensors would you need to develop a more effective passing strategy? }
-I propose we have more reliable long-range IR sensors to replace the unreliable Ping))) sensors.
+\paragraph{(2) What sensors would you need to develop a more effective passing strategy? \\}
+IR sensors are more suitable. The most important reason is that IR sensors work well regardless of the angle of the sensor with respective to the object. In this case, since the robot could have any angle to the surrounding walls, IR sensors are the better options compared to ping. Also, IR sensors can provide distance information with lower latency.
 
 \paragraph{(3) If you hit the wall a lot, how could you have changed the design to be more effective? If your robot can 
-travel 3 milestones without hitting a wall, you can skip this question. }
+travel 3 milestones without hitting a wall, you can skip this question. \\}
+
+Our robot passes 3 milestones without hitting a wall.
 
 \paragraph{(4) Briefly explain how odometry could be used in your robot (we discussed it in class). If you used it, how 
-well did it work and how could it be improved? If you didn’t use it, why didn’t you use it?}
+well did it work and how could it be improved? If you didn’t use it, why didn’t you use it? \\}
+
+Odometry can be used to estimate the position and orientation of the robot based on its current position. We decided to not use odometry because of two reasons:
+\begin{itemize}
+\item{First}, odometry requires accurate information of speed and angular velocity. Since we were not using any type of speed sensors, estimating velocity would not result in accurate measurements.
+\item{Second}, for the odometry to be effective, an accurate information of the map and environment is required. The prediction of the robot state is not going to be useful if information about the map is not available. 
+\end{itemize}
 
 
 \section{Post-Mortem Team Evaluation}
@@ -178,11 +260,8 @@ Here we evaluate the Strengths and Weaknesses by teammate.
 \end{itemize}
 
 \subsection*{Failure and Success in Communication}
-We started out early with logistics and use new internet technology to improve our communication, for example
-code repository and smartphone apps. The only thing preventing us from better communicating is the language barrier
-because we all speak English as a second language, but despite this we are able to work beyond the nationality and
-function well. Our success in communication is that we have been able to meet punctually and we have a strong
-leadership and clear job assignment that makes everybody engaged and working.
-
+Thanks to the early set-up with internet tool and code repository, we have had few problems in communication.
+An added difficulty surfaces when Nick's cell phone broke and so our smartphone app chatroom can no longer be used
+and we had to resort to using Facebook or face-to-face communication more.
 
 \end{document}

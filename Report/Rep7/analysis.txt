@@ -1,0 +1,24 @@
+ysis and Discussion (2 page maximum). In particular, answer these questions 
+1) What is the effect of time delay in your control system? 
+
+The effect of time delay would be that robot reacts to the environment data that belongs to a previous point in time. This could result in robot not turning quickly
+as soon as it finds a gap, the robot not being able to stabilize its direction among the sides, and the robot hitting the wall before knowing that it has to stop.
+
+2) What sensors would you need to develop a more effective passing strategy? 
+
+IR sensors are more suitable. The most important reason is that IR sensors work well regardless of the angle of the sensor with respective to the object.
+In this case, since the robot could have any angle to the surrounding walls, IR sensors are the better options compared to ping. Also, IR sensors can provide
+distance information with lower latency.
+
+3) If you hit the wall a lot, how could you have changed the design to be more effective? If your robot can 
+travel 3 milestones without hitting a wall, you can skip this question. 
+
+Skip, we pass 3 milestones without hitting a wall.
+
+4) Briefly explain how odometry could be used in your robot (we discussed it in class). If you used it, how 
+well did it work and how could it be improved? If you didn’t use it, why didn’t you use it? 
+
+Odometry can be used to estimate the position and orientation of the robot based on its current position. We decided to not use odometry because of two reasons:
+first, odometry requires accurate information of speed and angular velocity. Since we were not using any type of speed sensors, estimating velocity would not
+result in accurate measurements. Second, for the odometry to be effective, an accurate information of the map and
+environment is required. The prediction of the robot state is not going to be useful if information about the map is not available. 

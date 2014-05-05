@@ -39,7 +39,7 @@ unsigned char SensorF, SensorFPing, SensorR, SensorL, SensorFR, SensorFL;
 
 // Function implementing an incremental controller
 //static void IncrementalController( long ref,  long *curr);
-typedef enum State_t {GoForward, /* TurnRight, TurnLeft, Stop, */ SteerRight, SteerLeft, GoBackWard, GoStraight} State;
+typedef enum State_t {GoForward, /* TurnRight, TurnLeft,*/ Stop, SteerRight, SteerLeft, GoBackWard, GoStraight} State;
 
 void Controller(void) {
 	static int Time = 0, i = 0;
@@ -134,6 +134,8 @@ void Controller(void) {
 			
 			//Sterring
 			if (FRONT < F_Go2Stop_THRS || SensorFR < FS_Go2Stop_THRS || SensorFL < FS_Go2Stop_THRS) {
+				currentState = Stop;
+				/*
 				if (SideError < -5) {
 					currentState = SteerRight;
 				} else if (SideError > 5) {
@@ -142,7 +144,7 @@ void Controller(void) {
 					currentState = SteerLeft;
 				} else {
 					currentState = SteerRight;					
-				}
+				}*/
 				counter = 0;
 				error_i = 0; break;
 			}
@@ -212,30 +214,32 @@ void Controller(void) {
 //			}
 //			break;
 //			
-//		case Stop:
-//			/****************************************/ Debug_LED(WHITE);
-//		
-//		  // Stoping the wheels
-//			RefSpeedR = RefSpeedL = 0;
-//			IncrementalController(RefSpeedR, &CurrentSpeedR);
-//			CurrentSpeedL = CurrentSpeedR;
-//		
-//		 // if (CurrentSpeedR == 0) {
-//				if (FRONT < F_Turn2Go_THRS || SensorFR < FS_Go2Stop_THRS || SensorFL < FS_Go2Stop_THRS ) {
-//					if (SensorR > SensorL + 5) {
-//						currentState=TurnRight;
-//					} else if (SensorL > SensorR + 5) {
-//						currentState=TurnLeft;
-//					} else if (SensorFL < SensorFR) {
-//						currentState=TurnRight;
-//					} else {
-//						currentState=TurnLeft;						
-//					}
-//				} else {
-//					currentState = GoForward;
-//				}
-//		//	} 
-//			break;
+		case Stop:
+			/****************************************/ Debug_LED(BLUE);
+		
+		  // Stoping the wheels
+			RefSpeedR = RefSpeedL = 0;
+			CurrentSpeedL = CurrentSpeedR = 0;
+		
+		  if (counter  == 50) {
+				if (FRONT < F_Turn2Go_THRS || SensorFR < FS_Go2Stop_THRS || SensorFL < FS_Go2Stop_THRS ) {
+					if (SensorR > SensorL + 5) {
+						currentState=SteerRight;
+					} else if (SensorL > SensorR + 5) {
+						currentState=SteerLeft;
+					} else if (SensorFL < SensorFR) {
+						currentState=SteerRight;
+					} else {
+						currentState=SteerLeft;						
+					}
+				} else {
+					currentState = GoForward;
+				}
+				counter = 0;
+			} else {
+				counter ++;
+			}
+			break;
 			
 		case SteerRight:
 			/****************************************/ Debug_LED(GREEN);

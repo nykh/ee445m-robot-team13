@@ -1,0 +1,46 @@
+// MCP2551 Pin1 TXD  ---- CAN0Tx PE5 (8) O TTL CAN module 0 transmit
+// MCP2551 Pin2 Vss  ---- ground
+// MCP2551 Pin3 VDD  ---- +5V with 0.1uF cap to ground
+// MCP2551 Pin4 RXD  ---- CAN0Rx PE4 (8) I TTL CAN module 0 receive
+// MCP2551 Pin5 VREF ---- open (it will be 2.5V)
+// MCP2551 Pin6 CANL ---- to other CANL on network 
+// MCP2551 Pin7 CANH ---- to other CANH on network 
+// MCP2551 Pin8 RS   ---- ground, Slope-Control Input (maximum slew rate)
+// 120 ohm across CANH, CANL on both ends of network
+
+#include "PLL.h"
+#include "Timer3.h"
+#include "can0.h"
+#include "tm4c123gh6pm.h"
+
+unsigned char XmtData[4];
+unsigned char RcvData[4];
+unsigned long RcvCount=0;
+unsigned char sequenceNum=0;  
+
+void UserTask(void){
+  XmtData[0] = PF0<<1;  // 0 or 2
+  XmtData[1] = PF4>>2;  // 0 or 4
+  XmtData[2] = 0;       // ununsigned field
+  XmtData[3] = sequenceNum;  // sequence count
+  CAN0_SendData(XmtData);
+  sequenceNum++;
+}
+
+//debug code
+int main(void){ volatile unsigned long delay;
+  PLL_Init();                      // bus clock at 80 MHz
+  CAN0_Open();
+  Timer_Init(&UserTask, 1600000); // initialize timer3 (10 Hz)
+  EnableInterrupts();
+
+  while(1){
+    if(CAN0_GetMailNonBlock(RcvData)){
+      RcvCount++;
+      PF1 = RcvData[0];
+      PF2 = RcvData[1];
+      PF3 = RcvCount;   // heartbeat
+    }
+  } 
+}
+

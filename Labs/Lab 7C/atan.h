@@ -1,1 +1,0 @@
-double myatan(double x);
